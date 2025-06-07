@@ -58,7 +58,7 @@ app.post('/api/send-fcm', async (req, res) => {
                 },
                 // Para Safari iOS y compatibilidad máxima, incluye opciones extra
                 fcm_options: {
-                    link: 'https://estados-smoky.vercel.app/' // Cambia por la URL de tu PWA
+                    link: 'https://maquinaria.vercel.app/' // Cambia por la URL de tu PWA
                 }
             },
             tokens: tokens
