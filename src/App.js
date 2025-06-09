@@ -339,6 +339,12 @@ function App() {
         ...prev,
         [id]: { src, secondary: null, main }
       }));
+      // Notificación solo si es acción local
+      fcmSendNotification(
+        `Cambio en máquina ${id}`,
+        `Estado cambiado a Producción`,
+        id
+      );
       setModal({ show: false, target: null, main: null });
       return;
     }
@@ -353,6 +359,12 @@ function App() {
       ...prev,
       [id]: { src, secondary: secondaryIdx, main: modal.main }
     }));
+    // Notificación solo si es acción local
+    fcmSendNotification(
+      `Cambio en máquina ${id}`,
+      `Estado cambiado a ${secondaryOptionsMap[modal.main][secondaryIdx]}`,
+      id
+    );
     setTimeout(() => {
       setModal({ show: false, target: null, main: null });
     }, 0);
