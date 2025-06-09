@@ -77,14 +77,10 @@ function App() {
     // Escucha SIEMPRE los cambios remotos en Firebase y actualiza el estado local y localStorage
     const handler = onValue(dbRef, (snapshot) => {
       const remote = snapshot.val() || {};
-      setImgStates(prev => {
-        // Si el remote es igual al local, no actualices para evitar sobrescribir cambios locales inmediatos
-        if (JSON.stringify(remote) === JSON.stringify(prev)) return prev;
-        try {
-          localStorage.setItem('imgStates', JSON.stringify(remote));
-        } catch {}
-        return remote;
-      });
+      setImgStates(remote); // <-- SIEMPRE actualiza el estado local con lo de Firebase
+      try {
+        localStorage.setItem('imgStates', JSON.stringify(remote));
+      } catch {}
     });
     return () => off(dbRef, "value", handler);
   }, []);
@@ -94,8 +90,6 @@ function App() {
     try {
       localStorage.setItem('imgStates', JSON.stringify(imgStates));
     } catch {}
-    // Solo actualiza Firebase si el estado local es diferente al remoto
-    // (Evita bucle infinito)
     set(dbRef, imgStates);
   }, [imgStates]);
 
