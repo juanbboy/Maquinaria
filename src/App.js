@@ -72,16 +72,16 @@ function App() {
     }
   });
 
-  // --- SINCRONIZACIÓN EN TIEMPO REAL SOLO CON FIREBASE ---
+  // --- SINCRONIZACIÓN EN TIEMPO REAL ENTRE TODOS LOS DISPOSITIVOS ---
   useEffect(() => {
-    // Escucha cambios remotos en Firebase y actualiza el estado local SOLO si no hay nada en localStorage
+    // Escucha SIEMPRE los cambios remotos en Firebase y actualiza el estado local y localStorage
     const handler = onValue(dbRef, (snapshot) => {
       const remote = snapshot.val() || {};
-      // Solo actualiza si el local está vacío (primera carga)
       setImgStates(prev => {
+        // Si el remote es igual al local, no actualices para evitar sobrescribir cambios locales inmediatos
+        if (JSON.stringify(remote) === JSON.stringify(prev)) return prev;
         try {
-          const local = localStorage.getItem('imgStates');
-          if (local && Object.keys(JSON.parse(local)).length > 0) return prev;
+          localStorage.setItem('imgStates', JSON.stringify(remote));
         } catch {}
         return remote;
       });
@@ -89,12 +89,29 @@ function App() {
     return () => off(dbRef, "value", handler);
   }, []);
 
-  // --- Guardar imgStates en localStorage cada vez que cambia ---
+  // --- Guardar imgStates en localStorage y Firebase cada vez que cambia ---
   useEffect(() => {
     try {
       localStorage.setItem('imgStates', JSON.stringify(imgStates));
     } catch {}
+    // Solo actualiza Firebase si el estado local es diferente al remoto
+    // (Evita bucle infinito)
+    set(dbRef, imgStates);
   }, [imgStates]);
+
+  // --- Sincroniza entre pestañas usando el evento storage ---
+  useEffect(() => {
+    function handleStorage(e) {
+      if (e.key === 'imgStates' && e.newValue) {
+        try {
+          const remote = JSON.parse(e.newValue);
+          setImgStates(remote);
+        } catch { }
+      }
+    }
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, []);
 
   // --- Guardar snapshot manualmente con un botón ---
   const handleSaveSnapshotNow = async () => {
@@ -296,7 +313,7 @@ function App() {
   // cpdrojo, cpdnegro, cpdamarillo, cpdverde, imgRefs no usados
 
   // --- Opciones y helpers necesarios para la UI ---
- 
+
   // Helpers para UI
   function setImgRef(id) {
     return (el) => {
@@ -2082,30 +2099,8 @@ function App() {
           </button>
         )}
       </div>
-      {/* Modal para mostrar los snapshots diarios */}
-      {/* 
-      {showSnapshot && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
-          background: 'rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 99999
-        }}>
-          <div style={{ background: 'white', padding: 24, borderRadius: 8, minWidth: 300, maxWidth: 700 }}>
-            <h4>Estados guardados del día</h4>
-            {[0, 1, 2].map(i => (
-              <div key={i} style={{ marginBottom: 18 }}>
-                <div style={{ fontSize: 15, color: "#007bff" }}>
-                  Estado {i + 1} {snapshotDate[i] ? `- Guardado el: ${snapshotDate[i]}` : "(sin datos)"}
-                </div>
-                <pre style={{ maxHeight: 180, overflow: "auto", background: "#f8f9fa", padding: 10, fontSize: 13 }}>
-                  {snapshotData[i] ? JSON.stringify(snapshotData[i], null, 2) : "No hay datos"}
-                </pre>
-              </div>
-            ))}
-            <button className="btn btn-secondary" onClick={handleCloseSnapshot}>Cerrar</button>
-          </div>
-        </div>
-      )}
-      */}
+
+
       {/* Modal para mostrar todos los snapshots guardados */}
       {showAllSnapshots && (
         <div style={{
@@ -2170,20 +2165,20 @@ function App() {
                         </head>
                         <body>
                           <h2>Visualización gráfica de snapshots</h2>
-                          ${allSnapshots.map(({key, value}) => `
+                          ${allSnapshots.map(({ key, value }) => `
                             <div class="snap">
                               <h3>${key}</h3>
                               <div class="img-grid">
                                 ${Object.entries(value).map(([id, state]) => {
-                                  // Usa la imagen guardada en src, si no existe usa dummy
-                                  let src = state.src || "https://dummyimage.com/90x90/ccc/fff&text=" + id;
-                                  let mainLabel = mainLabels[state.main] || "";
-                                  let secondaryLabel = "";
-                                  if (typeof state === "object" && state.secondary != null && state.main != null && state.main !== 4) {
-                                    const opts = secondaryOptionsMap[state.main] || [];
-                                    secondaryLabel = opts[state.secondary] || "";
-                                  }
-                                  return `
+                        // Usa la imagen guardada en src, si no existe usa dummy
+                        let src = state.src || "https://dummyimage.com/90x90/ccc/fff&text=" + id;
+                        let mainLabel = mainLabels[state.main] || "";
+                        let secondaryLabel = "";
+                        if (typeof state === "object" && state.secondary != null && state.main != null && state.main !== 4) {
+                          const opts = secondaryOptionsMap[state.main] || [];
+                          secondaryLabel = opts[state.secondary] || "";
+                        }
+                        return `
                                     <div class="img-col">
                                       <img src="${src}" alt="${id}" title="${id}" />
                                       <div class="img-label"><b>${id}</b></div>
@@ -2191,7 +2186,7 @@ function App() {
                                       <div class="secondary-label">${secondaryLabel}</div>
                                     </div>
                                   `;
-                                }).join('')}
+                      }).join('')}
                               </div>
                             </div>
                           `).join('')}
