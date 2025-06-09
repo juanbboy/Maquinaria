@@ -6,11 +6,6 @@ const admin = require('firebase-admin');
 const cors = require('cors');
 const { getDatabase } = require('firebase-admin/database');
 
-
-// Carga las credenciales de servicio
-// Asegúrate de que el archivo 'firebase-service-account.json' existe en la raíz de e:\maquinas
-// Si no existe, descárgalo desde la consola de Firebase:
-// Proyecto > Configuración > Cuentas de servicio > Generar nueva clave privada
 const serviceAccount = require('./firebase-service-account.json');
 
 admin.initializeApp({
@@ -41,6 +36,7 @@ app.post('/api/send-fcm', async (req, res) => {
 
         console.log('Enviando notificación a tokens:', tokens);
 
+        // ENVÍA COMO MULTICAST (una sola llamada para todos los tokens)
         const message = {
             notification: { title, body },
             webpush: {
@@ -56,31 +52,51 @@ app.post('/api/send-fcm', async (req, res) => {
                     Urgency: 'high',
                     TTL: '86400'
                 },
-                // Para Safari iOS y compatibilidad máxima, incluye opciones extra
                 fcm_options: {
-                    link: 'https://maquinaria.vercel.app/' // Cambia por la URL de tu PWA
+                    link: 'https://maquinaria.vercel.app/'
                 }
-            },
-            tokens: tokens
+            }
         };
 
-        // Selecciona el método correcto según la versión de firebase-admin
-        let response;
-        if (typeof admin.messaging().sendEachForMulticast === 'function') {
-            // Para firebase-admin v10+
-            response = await admin.messaging().sendEachForMulticast(message);
-        } else if (typeof admin.messaging().sendMulticast === 'function') {
-            // Para firebase-admin v9
-            response = await admin.messaging().sendMulticast(message);
-        } else if (typeof admin.messaging().sendToDevice === 'function') {
-            // Para versiones antiguas
-            response = await admin.messaging().sendToDevice(tokens, { notification: { title, body } });
+        // Divide los tokens en lotes de 500 (límite de FCM)
+        // Pero si tienes menos de 500, solo envía un lote
+        const batchSize = 500;
+        let responses = [];
+        if (tokens.length <= batchSize) {
+            // Solo un lote, una sola notificación
+            const multicastMsg = { ...message, tokens };
+            let response;
+            if (typeof admin.messaging().sendMulticast === 'function') {
+                response = await admin.messaging().sendMulticast(multicastMsg);
+            } else if (typeof admin.messaging().sendEachForMulticast === 'function') {
+                response = await admin.messaging().sendEachForMulticast(multicastMsg);
+            } else if (typeof admin.messaging().sendToDevice === 'function') {
+                response = await admin.messaging().sendToDevice(tokens, { notification: { title, body } });
+            } else {
+                throw new Error('No se encontró un método válido para enviar mensajes FCM en esta versión de firebase-admin.');
+            }
+            responses.push(response);
         } else {
-            throw new Error('No se encontró un método válido para enviar mensajes FCM en esta versión de firebase-admin.');
+            // Si hay más de 500, divide en lotes (esto es raro en tu caso)
+            for (let i = 0; i < tokens.length; i += batchSize) {
+                const batch = tokens.slice(i, i + batchSize);
+                const multicastMsg = { ...message, tokens: batch };
+                let response;
+                if (typeof admin.messaging().sendMulticast === 'function') {
+                    response = await admin.messaging().sendMulticast(multicastMsg);
+                } else if (typeof admin.messaging().sendEachForMulticast === 'function') {
+                    response = await admin.messaging().sendEachForMulticast(multicastMsg);
+                } else if (typeof admin.messaging().sendToDevice === 'function') {
+                    response = await admin.messaging().sendToDevice(batch, { notification: { title, body } });
+                } else {
+                    throw new Error('No se encontró un método válido para enviar mensajes FCM en esta versión de firebase-admin.');
+                }
+                responses.push(response);
+            }
         }
-        console.log('Respuesta FCM:', response);
+        console.log('Respuesta FCM:', responses);
 
-        res.json({ success: true, fcmResponse: response });
+        res.json({ success: true, fcmResponse: responses });
     } catch (err) {
         console.error('Error enviando FCM:', err);
         res.status(500).json({ error: err.message });

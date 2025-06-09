@@ -73,14 +73,17 @@ function App() {
   });
 
   // --- SINCRONIZACIÓN EN TIEMPO REAL ENTRE TODOS LOS DISPOSITIVOS ---
+  // Define ignoreNext ref at the top-level of App
+  const ignoreNext = useRef(false);
   useEffect(() => {
     // Escucha SIEMPRE los cambios remotos en Firebase y actualiza el estado local y localStorage
     const handler = onValue(dbRef, (snapshot) => {
       const remote = snapshot.val() || {};
-      setImgStates(remote); // <-- SIEMPRE actualiza el estado local con lo de Firebase
+      ignoreNext.current = true; // Marca que el próximo cambio es remoto
+      setImgStates(remote);
       try {
         localStorage.setItem('imgStates', JSON.stringify(remote));
-      } catch {}
+      } catch { }
     });
     return () => off(dbRef, "value", handler);
   }, []);
@@ -89,7 +92,7 @@ function App() {
   useEffect(() => {
     try {
       localStorage.setItem('imgStates', JSON.stringify(imgStates));
-    } catch {}
+    } catch { }
     set(dbRef, imgStates);
   }, [imgStates]);
 
@@ -165,64 +168,43 @@ function App() {
   const [fcmToken, setFcmToken] = useState(null);
 
   // Envía notificación FCM al cambiar el estado (solo si hay token y no es cambio FCM)
-  const fcmSendNotification = React.useCallback(async (title, body) => {
-    if (!fcmToken) return;
-    try {
-      // Usa un endpoint que envía a todos los tokens, no por cada usuario
-      await fetch('http://localhost:4000/api/send-fcm', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title, body }),
-      })
-        .then(async res => {
-          if (!res.ok) {
-            const err = await res.json();
-            console.error('Error backend FCM:', err);
-          }
-        })
-        .catch(e => {
-          console.error('Error fetch FCM:', e);
-        });
-    } catch (e) {
-      console.error('Error enviando notificación FCM al backend:', e);
-    }
-  }, [fcmToken]);
-
-  // Solo envía una notificación por cambio real de estado (no por cada render ni por cada campo)
-  const prevImgStates = useRef(imgStates);
-  useEffect(() => {
-    // Detecta si hubo un cambio real en el estado de alguna máquina
-    const prev = prevImgStates.current;
-    const curr = imgStates;
-    let changedKey = null;
-    for (const key of Object.keys(curr)) {
-      if (JSON.stringify(curr[key]) !== JSON.stringify(prev?.[key])) {
-        changedKey = key;
-        break;
-      }
-    }
-    if (changedKey && !window.__fcm_event__) {
-      const val = curr[changedKey];
-      let opcion = "";
-      if (val && typeof val === "object" && val.main != null) {
-        let mainLabel = "";
-        if (val.main === 1) mainLabel = "Mecánico";
-        else if (val.main === 2) mainLabel = "Barrado";
-        else if (val.main === 3) mainLabel = "Electrónico";
-        else if (val.main === 4) mainLabel = "Producción";
-        else if (val.main === 5) mainLabel = "Seguimiento";
-        let subLabel = "";
-        if (val.secondary != null && val.main !== 4) {
-          const opts = secondaryOptionsMap[val.main] || [];
-          subLabel = opts[val.secondary] ? ` - ${opts[val.secondary]}` : "";
+  // Solo envía una notificación por acción del usuario, no por cada sincronización
+  const fcmSendNotification = React.useCallback(
+    (() => {
+      let lastSent = { key: null, ts: 0 };
+      return async (title, body, changedKey) => {
+        if (!fcmToken) return;
+        // Evita enviar notificaciones duplicadas para el mismo cambio en un corto periodo
+        const now = Date.now();
+        if (lastSent.key === changedKey && now - lastSent.ts < 2000) return;
+        lastSent = { key: changedKey, ts: now };
+        try {
+          await fetch('http://localhost:4000/api/send-fcm', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ title, body }),
+          });
+        } catch (e) {
+          console.error('Error enviando notificación FCM al backend:', e);
         }
-        opcion = `${mainLabel}${subLabel}`;
-      }
-      fcmSendNotification("Cambio de estado", `maquina ${changedKey}: ${opcion}`);
-    }
-    window.__fcm_event__ = false;
-    prevImgStates.current = imgStates;
-  }, [imgStates, fcmSendNotification, secondaryOptionsMap]);
+      };
+    })(),
+    [fcmToken]
+  );
+
+  // Solo muestra la notificación una vez por mensaje recibido
+
+  const lastPayloadId = useRef(null);
+  const lastPayloadTime = useRef(0);
+  useEffect(() => {
+    if (!messaging) return;
+    onMessage(messaging, (payload) => {
+      // Solo maneja lógica de UI si es necesario, pero NO muestres notificación aquí
+      // Ejemplo: puedes actualizar el estado, mostrar un toast interno, etc.
+      // Si quieres, puedes hacer console.log(payload);
+      // console.log("Mensaje recibido en foreground:", payload);
+    });
+  }, [messaging]);
 
   // --- Sincronización del estado actual entre dispositivos usando localStorage events ---
 
@@ -282,28 +264,10 @@ function App() {
     // Escucha mensajes push cuando la app está abierta
     if (messaging) {
       onMessage(messaging, (payload) => {
-        if (payload?.notification) {
-          window.__fcm_event__ = true;
-          // Siempre intenta mostrar la notificación usando el Service Worker
-          if (navigator.serviceWorker && navigator.serviceWorker.controller) {
-            navigator.serviceWorker.ready.then(swReg => {
-              swReg.showNotification(payload.notification.title, {
-                body: payload.notification.body,
-                icon: payload.notification.icon,
-              });
-            });
-          } else {
-            // Fallback para navegadores sin SW activo
-            try {
-              new Notification(payload.notification.title, {
-                body: payload.notification.body,
-                icon: payload.notification.icon,
-              });
-            } catch (e) {
-              alert(payload.notification.title + "\n" + payload.notification.body);
-            }
-          }
-        }
+        // Solo maneja lógica de UI si es necesario, pero NO muestres notificación aquí
+        // Ejemplo: puedes actualizar el estado, mostrar un toast interno, etc.
+        // Si quieres, puedes hacer console.log(payload);
+        // console.log("Mensaje recibido en foreground:", payload);
       });
     }
   }, []);
