@@ -8,25 +8,12 @@ firebase.initializeApp({
     projectId: "react-auth-app-6a340",
     storageBucket: "react-auth-app-6a340.appspot.com",
     messagingSenderId: "778269297947",
-<<<<<<< HEAD
     appId: "1:778269297947:web:fe855452be4a5d767257be",
     measurementId: "G-960E23P220"
-=======
-    appId: "1:778269297947:web:fe855452be4a5d767257be"
-    // No incluyas databaseURL ni measurementId aquí, no son necesarios para FCM en el SW
->>>>>>> 59732cd (first commit)
 });
 
 const messaging = firebase.messaging();
 
-<<<<<<< HEAD
-// Maneja notificaciones push en segundo plano
-messaging.onBackgroundMessage(function (payload) {
-    self.registration.showNotification(payload.notification.title, {
-        body: payload.notification.body,
-        icon: payload.notification.icon
-    });
-=======
 // Maneja notificaciones push en segundo plano (cuando la app está cerrada o en background)
 messaging.onBackgroundMessage(function (payload) {
     console.log('[firebase-messaging-sw.js] onBackgroundMessage payload:', payload);
@@ -63,19 +50,10 @@ self.addEventListener('push', function (event) {
     } else {
         console.warn('[firebase-messaging-sw.js] Evento push sin data');
     }
->>>>>>> 59732cd (first commit)
 });
 
-// Opcional: Maneja notificaciones cuando el usuario hace click
+// Maneja clics en la notificación
 self.addEventListener('notificationclick', function (event) {
-<<<<<<< HEAD
-    event.notification.close();
-    // Puedes personalizar la URL a abrir
-    event.waitUntil(
-        clients.openWindow('/')
-    );
-});
-=======
     console.log('[firebase-messaging-sw.js] notificationclick:', event);
     event.notification.close();
     event.waitUntil(
@@ -92,5 +70,3 @@ self.addEventListener('activate', event => {
     console.log('[firebase-messaging-sw.js] Activando Service Worker');
     event.waitUntil(self.clients.claim());
 });
-
->>>>>>> 59732cd (first commit)
