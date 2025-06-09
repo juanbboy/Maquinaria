@@ -168,10 +168,11 @@ function App() {
   const fcmSendNotification = React.useCallback(async (title, body) => {
     if (!fcmToken) return;
     try {
+      // Usa un endpoint que envía a todos los tokens, no por cada usuario
       await fetch('http://localhost:4000/api/send-fcm', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title, body, token: fcmToken }),
+        body: JSON.stringify({ title, body }),
       })
         .then(async res => {
           if (!res.ok) {
@@ -187,36 +188,40 @@ function App() {
     }
   }, [fcmToken]);
 
+  // Solo envía una notificación por cambio real de estado (no por cada render ni por cada campo)
   const prevImgStates = useRef(imgStates);
   useEffect(() => {
-    if (prevImgStates.current !== imgStates) {
-      if (!window.__fcm_event__) {
-        const changed = Object.keys(imgStates).find(
-          key => JSON.stringify(imgStates[key]) !== JSON.stringify(prevImgStates.current[key])
-        );
-        if (changed) {
-          const val = imgStates[changed];
-          let opcion = "";
-          if (val && typeof val === "object" && val.main != null) {
-            let mainLabel = "";
-            if (val.main === 1) mainLabel = "Mecánico";
-            else if (val.main === 2) mainLabel = "Barrado";
-            else if (val.main === 3) mainLabel = "Electrónico";
-            else if (val.main === 4) mainLabel = "Producción";
-            else if (val.main === 5) mainLabel = "Seguimiento";
-            let subLabel = "";
-            if (val.secondary != null && val.main !== 4) {
-              const opts = secondaryOptionsMap[val.main] || [];
-              subLabel = opts[val.secondary] ? ` - ${opts[val.secondary]}` : "";
-            }
-            opcion = `${mainLabel}${subLabel}`;
-          }
-          fcmSendNotification("Cambio de estado", `maquina ${changed}: ${opcion}`);
-        }
+    // Detecta si hubo un cambio real en el estado de alguna máquina
+    const prev = prevImgStates.current;
+    const curr = imgStates;
+    let changedKey = null;
+    for (const key of Object.keys(curr)) {
+      if (JSON.stringify(curr[key]) !== JSON.stringify(prev?.[key])) {
+        changedKey = key;
+        break;
       }
-      window.__fcm_event__ = false;
-      prevImgStates.current = imgStates;
     }
+    if (changedKey && !window.__fcm_event__) {
+      const val = curr[changedKey];
+      let opcion = "";
+      if (val && typeof val === "object" && val.main != null) {
+        let mainLabel = "";
+        if (val.main === 1) mainLabel = "Mecánico";
+        else if (val.main === 2) mainLabel = "Barrado";
+        else if (val.main === 3) mainLabel = "Electrónico";
+        else if (val.main === 4) mainLabel = "Producción";
+        else if (val.main === 5) mainLabel = "Seguimiento";
+        let subLabel = "";
+        if (val.secondary != null && val.main !== 4) {
+          const opts = secondaryOptionsMap[val.main] || [];
+          subLabel = opts[val.secondary] ? ` - ${opts[val.secondary]}` : "";
+        }
+        opcion = `${mainLabel}${subLabel}`;
+      }
+      fcmSendNotification("Cambio de estado", `maquina ${changedKey}: ${opcion}`);
+    }
+    window.__fcm_event__ = false;
+    prevImgStates.current = imgStates;
   }, [imgStates, fcmSendNotification, secondaryOptionsMap]);
 
   // --- Sincronización del estado actual entre dispositivos usando localStorage events ---
