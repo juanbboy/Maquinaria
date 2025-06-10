@@ -5,18 +5,44 @@ const bodyParser = require('body-parser');
 const admin = require('firebase-admin');
 const cors = require('cors');
 const { getDatabase } = require('firebase-admin/database');
-import fetch from 'node-fetch';
 
-const serviceAccount = require('./firebase-service-account.json');
+// Elimina o comenta la línea que importa el archivo de credenciales local
+// const serviceAccount = require('./firebase-service-account.json');
 
-admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount),
-    databaseURL: process.env.FIREBASE_DATABASE_URL, // <-- Solo esta línea
-});
+// Inicializa Firebase Admin usando variables de entorno (no archivo json)
+let firebaseApp;
+try {
+    // Permite compatibilidad con variables REACT_APP_ y FIREBASE_
+    const project_id = process.env.FIREBASE_SERVICE_ACCOUNT_PROJECT_ID || process.env.REACT_APP_FIREBASE_PROJECT_ID;
+    const client_email = process.env.FIREBASE_SERVICE_ACCOUNT_CLIENT_EMAIL || process.env.REACT_APP_FIREBASE_CLIENT_EMAIL;
+    const private_key = (process.env.FIREBASE_SERVICE_ACCOUNT_PRIVATE_KEY || process.env.REACT_APP_FIREBASE_PRIVATE_KEY)
+        ? (process.env.FIREBASE_SERVICE_ACCOUNT_PRIVATE_KEY || process.env.REACT_APP_FIREBASE_PRIVATE_KEY).replace(/\\n/g, '\n')
+        : undefined;
+    const databaseURL = process.env.REACT_APP_FIREBASE_DATABASE_URL
+
+    if (!project_id) throw new Error('FIREBASE_PROJECT_ID/REACT_APP_FIREBASE_PROJECT_ID is not set');
+    if (!client_email) throw new Error('FIREBASE_CLIENT_EMAIL/REACT_APP_FIREBASE_CLIENT_EMAIL is not set');
+    if (!private_key) throw new Error('FIREBASE_PRIVATE_KEY/REACT_APP_FIREBASE_PRIVATE_KEY is not set');
+    if (!databaseURL) throw new Error('FIREBASE_DATABASE_URL/REACT_APP_FIREBASE_DATABASE_URL is not set');
+
+    firebaseApp = admin.initializeApp({
+        credential: admin.credential.cert({
+            project_id,
+            client_email,
+            private_key,
+        }),
+        databaseURL,
+    });
+} catch (err) {
+    console.error('Error inicializando Firebase Admin:', err.message, err);
+    throw err;
+}
 
 const app = express();
 app.use(bodyParser.json());
-app.use(cors());
+app.use(cors({
+    origin: 'https://maquinaria.vercel.app'
+}));
 
 // Endpoint para enviar notificación FCM a todos los dispositivos registrados
 app.post('/api/send-fcm', async (req, res) => {
@@ -101,45 +127,6 @@ app.post('/api/send-fcm', async (req, res) => {
     } catch (err) {
         console.error('Error enviando FCM:', err);
         res.status(500).json({ error: err.message });
-    }
-});
-
-app.post('/api/send-fcm-external', async (req, res) => {
-    // --- CORS headers ---
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
-    if (req.method === 'OPTIONS') {
-        res.status(200).end();
-        return;
-    }
-
-    if (req.method !== 'POST') {
-        res.status(405).json({ error: 'Method not allowed' });
-        return;
-    }
-    const { title, body, to = '/topics/all' } = req.body || {};
-    if (!title || !body) {
-        res.status(400).json({ error: 'Missing title or body' });
-        return;
-    }
-    try {
-        const response = await fetch('https://fcm.googleapis.com/fcm/send', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `key=${process.env.FCM_SERVER_KEY}`
-            },
-            body: JSON.stringify({
-                to,
-                notification: { title, body }
-            })
-        });
-        const data = await response.json();
-        res.status(200).json({ ok: true, fcm: data });
-    } catch (e) {
-        res.status(500).json({ error: e.message });
     }
 });
 

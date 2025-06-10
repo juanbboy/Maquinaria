@@ -18,7 +18,7 @@ const firebaseConfig = {
   messagingSenderId: process.env.REACT_APP_FIREBASE_MESSAGING_SENDER_ID,
   appId: process.env.REACT_APP_FIREBASE_APP_ID,
   measurementId: process.env.REACT_APP_FIREBASE_MEASUREMENT_ID,
-  databaseURL: process.env.FIREBASE_DATABASE_URL // <--- Usar variable de entorno
+  databaseURL: process.env.REACT_APP_FIREBASE_DATABASE_URL // <--- Corrige aquí, usa REACT_APP_FIREBASE_DATABASE_URL
 };
 
 const app = initializeApp(firebaseConfig);
@@ -235,7 +235,7 @@ function App() {
         if (lastSent.key === changedKey && now - lastSent.ts < 2000) return;
         lastSent = { key: changedKey, ts: now };
         try {
-          await fetch('https://maquinaria.vercel.app/api/send-fcm', {
+          await fetch('http://maquinaria.vercel.app/api/send-fcm', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ title, body }),
@@ -1599,64 +1599,6 @@ function App() {
                   borderRadius: 12
                 }}>
                   {getSecondaryLabel("44") || "\u00A0"}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div className="col ">
-          <div className="row ">
-            <div className="col " >
-              <div>
-                <span className="d-none">4"(Media)</span>
-              </div>
-              <input ref={setImgRef("40")} type="image" onClick={img} src={getSrc("40")} width={60} alt="Placeholder" data-id="40"
-                style={{ borderRadius: 16 }} />
-              <div>
-                <strong>40</strong>
-                <div style={{
-                  fontSize: 14,
-                  color: "#888",
-                  minHeight: 20,
-                  height: 20,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
-                  width: "100%",
-                  borderRadius: 12
-                }}>
-                  {getSecondaryLabel("40") || "\u00A0"}
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="row ">
-            <div className="col " >
-              <div>
-                <span className="d-none">4"(Media)</span>
-              </div>
-              <input ref={setImgRef("43")} type="image" onClick={img} src={getSrc("43")} width={60} alt="Placeholder" data-id="43"
-                style={{ borderRadius: 16 }} />
-              <div>
-                <strong>43</strong>
-                <div style={{
-                  fontSize: 14,
-                  color: "#888",
-                  minHeight: 20,
-                  height: 20,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
-                  width: "100%",
-                  borderRadius: 12
-                }}>
-                  {getSecondaryLabel("43") || "\u00A0"}
                 </div>
               </div>
             </div>
