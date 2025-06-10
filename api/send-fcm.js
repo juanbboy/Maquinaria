@@ -58,6 +58,9 @@ app.post('/api/send-fcm', async (req, res) => {
         // Filtra tokens duplicados y tokens vacíos
         const tokens = Array.from(new Set(Object.keys(tokensObj).filter(t => t && t.length > 10)));
 
+        // DEBUG: Muestra los tokens y su cantidad
+        console.log('Tokens únicos enviados:', tokens.length, tokens);
+
         if (tokens.length === 0) {
             return res.status(200).json({ success: false, message: 'No hay tokens registrados' });
         }
