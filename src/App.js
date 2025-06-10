@@ -43,14 +43,14 @@ function App() {
   const secondaryOptionsMap = React.useMemo(() => ({
     1: [
       "Transferencia", "Vanizado", "Reviente LC", "Succion", "Reviente L180",
-      "Huecos y rotos", "Aguja", "Selectores", "Motores MPP", "Cuchillas", "Otros"
+      "Huecos y rotos", "Aguja", "Selectores", "Motores MPP", "Cuchillas", "correa", "Manguera rota", "Otros"
     ],
     2: [
-      "Materia prima", "Motores"
+      "Licra", "Nylon", "Motores"
     ],
     3: [
       "Valvulas", "Motores MPP", "No enciende", "Turbina", "Motor principal",
-      "Paros", "Sin programa", "Fusible", "Otros"
+      "Paros", "Sin programa", "Fusible", "Guia hilos", "Corto circuito", "Carga no conectada", "bloqueo", "Otros"
     ],
     4: [],
     5: [
@@ -65,36 +65,78 @@ function App() {
   // --- Cargar estado inicial desde localStorage si existe ---
   const [imgStates, setImgStates] = useState(() => {
     try {
-      const saved = localStorage.getItem('imgStates');
-      return saved ? JSON.parse(saved) : {};
-    } catch {
-      return {};
-    }
+      const local = localStorage.getItem('imgStates');
+      if (local) return JSON.parse(local);
+    } catch { }
+    return {};
   });
+  const isFirstLoad = useRef(true);
+  const ignoreNext = useRef(false);
 
   // --- SINCRONIZACIÓN EN TIEMPO REAL ENTRE TODOS LOS DISPOSITIVOS ---
-  // Define ignoreNext ref at the top-level of App
-  const ignoreNext = useRef(false);
   useEffect(() => {
-    // Escucha SIEMPRE los cambios remotos en Firebase y actualiza el estado local y localStorage
     const handler = onValue(dbRef, (snapshot) => {
-      const remote = snapshot.val() || {};
-      ignoreNext.current = true; // Marca que el próximo cambio es remoto
-      setImgStates(remote);
-      try {
-        localStorage.setItem('imgStates', JSON.stringify(remote));
-      } catch { }
+      const remote = snapshot.val();
+      if (remote && typeof remote === "object" && Object.keys(remote).length > 0) {
+        ignoreNext.current = true;
+        setImgStates(remote);
+        try {
+          localStorage.setItem('imgStates', JSON.stringify(remote));
+        } catch { }
+      } else if (isFirstLoad.current) {
+        // Si el remoto está vacío y es el primer load, intenta cargar localStorage (ya cargado en useState)
+        // No hacer nada aquí para evitar sobrescribir el estado inicial
+      }
+      isFirstLoad.current = false;
     });
     return () => off(dbRef, "value", handler);
   }, []);
 
-  // --- Guardar imgStates en localStorage y Firebase cada vez que cambia ---
   useEffect(() => {
+    // Solo sube a Firebase si el cambio es local (no cuando viene de Firebase)
+    if (isFirstLoad.current) {
+      isFirstLoad.current = false;
+      return;
+    }
+    if (ignoreNext.current) {
+      ignoreNext.current = false;
+      return;
+    }
+    // No subas el estado si está vacío (evita sobreescribir el remoto en dispositivos nuevos o al refrescar)
+    if (!imgStates || Object.keys(imgStates).length === 0) {
+      return;
+    }
     try {
       localStorage.setItem('imgStates', JSON.stringify(imgStates));
     } catch { }
     set(dbRef, imgStates);
   }, [imgStates]);
+
+  // --- SINCRONIZACIÓN EN TIEMPO REAL ENTRE TODOS LOS DISPOSITIVOS ---
+  // Corrige el borrado del estado al refrescar: solo actualiza el estado local si el remoto NO está vacío
+  useEffect(() => {
+    // En el primer render, intenta cargar localStorage si existe y el remoto está vacío
+    const handler = onValue(dbRef, (snapshot) => {
+      const remote = snapshot.val();
+      if (remote && typeof remote === "object" && Object.keys(remote).length > 0) {
+        ignoreNext.current = true;
+        setImgStates(remote);
+        try {
+          localStorage.setItem('imgStates', JSON.stringify(remote));
+        } catch { }
+      } else if (isFirstLoad.current) {
+        // Si el remoto está vacío y es el primer load, intenta cargar localStorage
+        try {
+          const local = localStorage.getItem('imgStates');
+          if (local) {
+            setImgStates(JSON.parse(local));
+          }
+        } catch { }
+      }
+      isFirstLoad.current = false;
+    });
+    return () => off(dbRef, "value", handler);
+  }, []);
 
   // --- Sincroniza entre pestañas usando el evento storage ---
   useEffect(() => {
@@ -129,7 +171,7 @@ function App() {
   };
 
   // Actualiza Firebase cuando cambia el estado local (evita bucle infinito)
-  const isFirstLoad = useRef(true);
+
   useEffect(() => {
     if (isFirstLoad.current) {
       isFirstLoad.current = false;
@@ -1957,8 +1999,7 @@ function App() {
           <div>
             <span className="d-none">6"(XL-2XL)</span>
           </div>
-          <input ref={setImgRef("76")} type="image" onClick={img} src={getSrc("76")} width={60} alt="Placeholder" data-id="76"
-            style={{ borderRadius: 16 }} />
+          <input ref={setImgRef("76")} type="image" onClick={img} src={getSrc("76")} width={60} alt="Placeholder" data-id="76" style={{ borderRadius: 16 }} />
           <div>
             <strong>76</strong>
             <div style={{
@@ -1980,7 +2021,6 @@ function App() {
           </div>
         </div>
       </div>
-
       {/* Modal de opciones */}
       {modal.show && (
         <div style={{
