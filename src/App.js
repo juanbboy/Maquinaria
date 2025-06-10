@@ -183,7 +183,7 @@ function App() {
   // --- ELIMINA CUALQUIER USO DE LOCALSTORAGE PARA EL ESTADO ACTUAL ---
   // (Solo deja localStorage para snapshots diarios, si lo deseas)
 
-  // --- NOTIFICACIONES WEB (COMPATIBILIDAD MÓVIL) ---
+  // --- NOTIFICACIONES WEB (COMPATIBILIDAD MÓVIL, INCLUYENDO IPHONE) ---
   // Solicita permiso para notificaciones push (debe ser por interacción del usuario en móviles)
   function requestNotificationPermission() {
     if ("Notification" in window && Notification.permission !== "granted") {
@@ -196,8 +196,22 @@ function App() {
       });
     } else if (Notification.permission === "denied") {
       alert("Debes permitir las notificaciones para recibir avisos en este navegador.");
+    } else if (!("Notification" in window)) {
+      alert("Este navegador no soporta notificaciones push.");
     }
   }
+
+  // --- iPhone/iOS: Mensaje de compatibilidad ---
+  useEffect(() => {
+    const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+    if (isIOS) {
+      // iOS Safari no soporta FCM ni notificaciones push web estándar (a junio 2024)
+      // Solo soporta notificaciones push si se instala como PWA (agregada a pantalla de inicio) y con iOS 16.4+
+      if (!window.matchMedia('(display-mode: standalone)').matches) {
+        alert("Para recibir notificaciones en iPhone, abre esta página en Safari, pulsa 'Compartir' y selecciona 'Agregar a pantalla de inicio'. Luego abre la app desde el icono en tu pantalla de inicio.");
+      }
+    }
+  }, []);
 
   // Botón para pedir permiso explícitamente (necesario en móviles)
   const [notifAsked, setNotifAsked] = useState(false);
@@ -221,7 +235,7 @@ function App() {
         if (lastSent.key === changedKey && now - lastSent.ts < 2000) return;
         lastSent = { key: changedKey, ts: now };
         try {
-          await fetch('http://localhost:4000/api/send-fcm', {
+          await fetch('https://maquinaria.vercel.app/api/send-fcm', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ title, body }),
@@ -268,6 +282,14 @@ function App() {
   // FCM: Solicita permiso y obtiene el token
   useEffect(() => {
     if (!messaging) return;
+
+    // iOS/Safari: FCM solo funciona si es PWA instalada y iOS >= 16.4
+    const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+    if (isIOS && !window.matchMedia('(display-mode: standalone)').matches) {
+      // No intentes obtener token si no es PWA en iOS
+      return;
+    }
+
     navigator.serviceWorker
       .getRegistration('/firebase-messaging-sw.js')
       .then((registration) => {
@@ -287,32 +309,19 @@ function App() {
               setFcmToken(currentToken);
               console.log("FCM Token:", currentToken);
               // Guarda el token en la base de datos (si no existe)
-              if (currentToken) {
-                // Guardar el token como clave para evitar duplicados
-                set(ref(db, `fcmTokens/${currentToken}`), {
-                  registeredAt: Date.now(),
-                  userAgent: navigator.userAgent
-                });
-              }
+              set(ref(db, `fcmTokens/${currentToken}`), {
+                registeredAt: Date.now(),
+                userAgent: navigator.userAgent
+              });
             } else {
-              console.log("No registration token available.");
+              console.log("No registration token available. ¿Permiso denegado?");
             }
           })
           .catch((err) => {
             console.log("An error occurred while retrieving token. ", err);
           });
       });
-
-    // Escucha mensajes push cuando la app está abierta
-    if (messaging) {
-      onMessage(messaging, (payload) => {
-        // Solo maneja lógica de UI si es necesario, pero NO muestres notificación aquí
-        // Ejemplo: puedes actualizar el estado, mostrar un toast interno, etc.
-        // Si quieres, puedes hacer console.log(payload);
-        // console.log("Mensaje recibido en foreground:", payload);
-      });
-    }
-  }, []);
+  }, [messaging]);
 
   // Elimina imports y variables no usados
   // cpdrojo, cpdnegro, cpdamarillo, cpdverde, imgRefs no usados
