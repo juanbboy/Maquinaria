@@ -130,6 +130,15 @@ app.post('/api/send-fcm', async (req, res) => {
     }
 });
 
+// Si usas Vercel Hobby plan, solo puedes tener hasta 12 endpoints (archivos en /api).
+// Para evitar el error, mantén solo los endpoints necesarios en la carpeta /api.
+// Elimina o mueve a otra carpeta cualquier archivo innecesario en /api.
+
+// Revisa la carpeta e:\maquinas\api:
+// - Mantén solo este archivo: send-fcm.js
+// - Borra cualquier otro archivo en e:\maquinas\api que no sea necesario para tu backend (por ejemplo, archivos de pruebas, ejemplos, endpoints que no uses).
+// - Cada archivo en /api cuenta como una función serverless en Vercel Hobby.
+
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {
     console.log(`FCM backend listening on port ${PORT}`);
