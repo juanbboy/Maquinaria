@@ -20,7 +20,7 @@ try {
         : undefined;
     const databaseURL = process.env.REACT_APP_FIREBASE_DATABASE_URL
 
-    if (!project_id) throw new Error('FIREBASE_PROJECT_ID/REACT_APP_FIREBASE_PROJECT_ID is not set');
+    if (!project_id) throw new Error('FIREBASE_PROJECT_ID/REACT_APP FIREBASE_PROJECT_ID is not set');
     if (!client_email) throw new Error('FIREBASE_CLIENT_EMAIL/REACT_APP_FIREBASE_CLIENT_EMAIL is not set');
     if (!private_key) throw new Error('FIREBASE_PRIVATE_KEY/REACT_APP_FIREBASE_PRIVATE_KEY is not set');
     if (!databaseURL) throw new Error('FIREBASE_DATABASE_URL/REACT_APP_FIREBASE_DATABASE_URL is not set');
@@ -55,7 +55,8 @@ app.post('/api/send-fcm', async (req, res) => {
         const db = getDatabase();
         const tokensSnap = await db.ref('fcmTokens').once('value');
         const tokensObj = tokensSnap.val() || {};
-        const tokens = Object.keys(tokensObj);
+        // Filtra tokens duplicados y tokens vacíos
+        const tokens = Array.from(new Set(Object.keys(tokensObj).filter(t => t && t.length > 10)));
 
         if (tokens.length === 0) {
             return res.status(200).json({ success: false, message: 'No hay tokens registrados' });
