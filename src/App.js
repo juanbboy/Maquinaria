@@ -235,7 +235,7 @@ function App() {
         if (lastSent.key === changedKey && now - lastSent.ts < 2000) return;
         lastSent = { key: changedKey, ts: now };
         try {
-          await fetch('http://maquinaria.vercel.app/api/send-fcm', {
+          await fetch('https://maquinaria.vercel.app/api/send-fcm', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ title, body }),
