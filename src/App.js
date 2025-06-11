@@ -498,7 +498,7 @@ function App() {
     }));
     // Notificación solo si es acción local
     fcmSendNotification(
-      `Cambio en máquina ${id}`,
+      `Máquina ${id}`,
       `Estado cambiado a ${secondaryOptionsMap[modal.main][secondaryIdx]}`,
       id
     );
