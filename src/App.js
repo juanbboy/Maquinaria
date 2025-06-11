@@ -479,7 +479,7 @@ function App() {
       // Notificación solo si es acción local
       fcmSendNotification(
         `Máquina ${id}`,
-        `Estado cambiado a Producción`,
+        `Producción`,
         id
       );
       setModal({ show: false, target: null, main: null });
@@ -497,9 +497,18 @@ function App() {
       [id]: { src, secondary: secondaryIdx, main: modal.main }
     }));
     // Notificación solo si es acción local
+    const mainLabels = {
+      1: "Mecánico",
+      2: "Barrado",
+      3: "Electrónico",
+      4: "Producción",
+      5: "Seguimiento"
+    };
+    const mainLabel = mainLabels[modal.main] || "";
+    const subLabel = secondaryOptionsMap[modal.main][secondaryIdx] || "";
     fcmSendNotification(
       `Máquina ${id}`,
-      `Estado cambiado a ${secondaryOptionsMap[modal.main][secondaryIdx]}`,
+      `${mainLabel}${subLabel ? " - " + subLabel : ""}`,
       id
     );
     setTimeout(() => {
