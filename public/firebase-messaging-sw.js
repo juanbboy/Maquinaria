@@ -25,23 +25,30 @@ self.addEventListener('message', (event) => {
 
 // Elimina la notificación duplicada tanto en onBackgroundMessage como en push
 function shouldSkipNotification(title, body) {
-    // Solo filtra si la notificación es exactamente igual a la anterior Y ocurre en menos de 2 segundos
-    // Además, si ya mostramos una notificación en este ciclo de event loop
-    // En Safari/iOS, FCM puede llamar tanto push como onBackgroundMessage: solo permite una por ciclo
-    if (self.__notificationShown) return true;
+    // En móviles, FCM puede disparar tanto push como onBackgroundMessage.
+    // Usamos un flag global y un timestamp para permitir solo una notificación real por evento.
+    // Este flag se pone en true en el primer handler que lo ejecute y bloquea el otro.
+    if (self.__notificationMobileLock) return true;
     const now = Date.now();
+    // Detecta móvil por userAgent (si está disponible)
+    let isMobile = false;
+    try {
+        isMobile = typeof self.navigator !== "undefined" && /android|iphone|ipad|ipod|mobile/i.test(self.navigator.userAgent || "");
+    } catch { }
+    // Si es móvil, activa el lock por 2 segundos
+    if (isMobile) {
+        self.__notificationMobileLock = true;
+        setTimeout(() => { self.__notificationMobileLock = false; }, 2000);
+    }
+    // Además, filtra duplicados por título/cuerpo
     if (
         title === lastNotification.title &&
         body === lastNotification.body &&
         now - lastNotification.ts < 2000
     ) {
-        self.__notificationShown = true;
         return true;
     }
     lastNotification = { title, body, ts: now };
-    self.__notificationShown = true;
-    // Limpia el flag después de un corto tiempo para el siguiente evento
-    setTimeout(() => { self.__notificationShown = false; }, 1000);
     return false;
 }
 
