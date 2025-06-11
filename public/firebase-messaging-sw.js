@@ -25,17 +25,16 @@ self.addEventListener('message', (event) => {
 
 // Elimina la notificación duplicada tanto en onBackgroundMessage como en push
 function shouldSkipNotification(title, body) {
-    // En móviles, FCM puede disparar tanto push como onBackgroundMessage.
-    // Usamos un flag global y un timestamp para permitir solo una notificación real por evento.
-    // Este flag se pone en true en el primer handler que lo ejecute y bloquea el otro.
+    // En iPhone/Safari, FCM dispara tanto push como onBackgroundMessage.
+    // Solo permite una notificación por evento usando un lock global.
     if (self.__notificationMobileLock) return true;
     const now = Date.now();
     // Detecta móvil por userAgent (si está disponible)
     let isMobile = false;
     try {
-        isMobile = typeof self.navigator !== "undefined" && /android|iphone|ipad|ipod|mobile/i.test(self.navigator.userAgent || "");
+        isMobile = typeof self.navigator !== "undefined" && /iphone|ipad|ipod|ios|mobile/i.test((self.navigator.userAgent || "").toLowerCase());
     } catch { }
-    // Si es móvil, activa el lock por 2 segundos
+    // Si es móvil, activa el lock por 2 segundos y bloquea el otro handler
     if (isMobile) {
         self.__notificationMobileLock = true;
         setTimeout(() => { self.__notificationMobileLock = false; }, 2000);
@@ -55,11 +54,13 @@ function shouldSkipNotification(title, body) {
 // Solo permite mostrar una notificación por evento push
 self.addEventListener('push', function (event) {
     if (!event.data) return;
-    if (self.__notificationShown) return; // Ya mostramos una en este ciclo
+    // Aplica el lock para móviles (iPhone/Safari)
+    if (self.__notificationMobileLock) return;
+    self.__notificationMobileLock = true;
+    setTimeout(() => { self.__notificationMobileLock = false; }, 2000);
     const data = event.data.json();
     const { title, body } = data.notification || {};
     if (shouldSkipNotification(title, body)) return;
-
     event.waitUntil(
         self.registration.showNotification(title, {
             body,
@@ -70,22 +71,22 @@ self.addEventListener('push', function (event) {
             actions: [{ action: 'open', title: 'Abrir App' }]
         })
     );
-    // Limpia el flag después de un corto tiempo para el siguiente evento
-    setTimeout(() => { self.__notificationShown = false; }, 1000);
 });
 
 // Solo permite mostrar una notificación por evento backgroundMessage
 messaging.onBackgroundMessage(function (payload) {
+    // Aplica el lock para móviles (iPhone/Safari)
+    if (self.__notificationMobileLock) return;
+    self.__notificationMobileLock = true;
+    setTimeout(() => { self.__notificationMobileLock = false; }, 2000);
     console.log('[firebase-messaging-sw.js] onBackgroundMessage payload:', payload);
     if (payload && payload.notification && payload.notification.title) {
-        if (self.__notificationShown) return; // Ya mostramos una en este ciclo
         const { title, body } = payload.notification;
         if (shouldSkipNotification(title, body)) return;
         self.registration.showNotification(title, {
             body: payload.notification.body || '',
             icon: payload.notification.icon || '/logo192.png'
         });
-        setTimeout(() => { self.__notificationShown = false; }, 1000);
     } else {
         console.warn('[firebase-messaging-sw.js] onBackgroundMessage sin notification:', payload);
     }
