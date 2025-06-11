@@ -14,6 +14,15 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
+let lastNotification = { title: '', body: '', ts: 0 };
+let disableDuplicate = false;
+
+self.addEventListener('message', (event) => {
+    if (event.data && event.data.type === 'DISABLE_DUPLICATE_FCM') {
+        disableDuplicate = true;
+    }
+});
+
 // Maneja notificaciones push en segundo plano (cuando la app está cerrada o en background)
 messaging.onBackgroundMessage(function (payload) {
     console.log('[firebase-messaging-sw.js] onBackgroundMessage payload:', payload);
@@ -27,29 +36,35 @@ messaging.onBackgroundMessage(function (payload) {
     }
 });
 
-// Maneja notificaciones push directas tipo "data" (por si el backend no usa notification)
+// Maneja notificaciones push de FCM
 self.addEventListener('push', function (event) {
-    console.log('[firebase-messaging-sw.js] Push recibido:', event);
-    if (event.data) {
-        let data = {};
-        try {
-            data = event.data.json();
-        } catch (e) {
-            data = { title: 'Notificación', body: event.data.text() };
-        }
-        const notification = data.notification || data;
-        console.log('[firebase-messaging-sw.js] Mostrando notificación:', notification);
-        if (notification && notification.title) {
-            self.registration.showNotification(notification.title, {
-                body: notification.body || '',
-                icon: notification.icon || '/logo192.png'
-            });
-        } else {
-            console.warn('[firebase-messaging-sw.js] Notificación sin título:', notification);
-        }
-    } else {
-        console.warn('[firebase-messaging-sw.js] Evento push sin data');
+    if (!event.data) return;
+    const data = event.data.json();
+    const { title, body } = data.notification || {};
+    const now = Date.now();
+
+    // Evita mostrar notificaciones duplicadas en menos de 2 segundos
+    if (
+        disableDuplicate &&
+        title === lastNotification.title &&
+        body === lastNotification.body &&
+        now - lastNotification.ts < 2000
+    ) {
+        // No mostrar duplicado
+        return;
     }
+    lastNotification = { title, body, ts: now };
+
+    event.waitUntil(
+        self.registration.showNotification(title, {
+            body,
+            icon: 'https://cdn-icons-png.flaticon.com/512/190/190411.png',
+            badge: 'https://cdn-icons-png.flaticon.com/512/190/190411.png',
+            vibrate: [200, 100, 200],
+            data: data,
+            actions: [{ action: 'open', title: 'Abrir App' }]
+        })
+    );
 });
 
 // Maneja clics en la notificación

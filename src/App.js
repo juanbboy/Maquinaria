@@ -152,22 +152,99 @@ function App() {
     return () => window.removeEventListener('storage', handleStorage);
   }, []);
 
-  // --- Guardar snapshot manualmente con un botón ---
+  // --- Guardar snapshot manualmente con un botón, pregunta quién lo guarda y guarda el estado completo ---
   const handleSaveSnapshotNow = async () => {
-    // Guarda todas las opciones seleccionadas y la imagen (src) de cada máquina
-    const snapshot = {};
-    Object.entries(imgStates).forEach(([id, val]) => {
-      snapshot[id] = {
-        main: val?.main ?? null,
-        secondary: val?.secondary ?? null,
-        src: getSrc(id)
+    const nombres = ["F. Riobo", "N. Castañeda", "M. Gomez", "J. Bobadiila", "J. Salazar"];
+    return new Promise((resolve) => {
+      // Mostrar modal personalizado con botones
+      const modalDiv = document.createElement('div');
+      modalDiv.style.position = 'fixed';
+      modalDiv.style.top = 0;
+      modalDiv.style.left = 0;
+      modalDiv.style.width = '100vw';
+      modalDiv.style.height = '100vh';
+      modalDiv.style.background = 'rgba(0,0,0,0.3)';
+      modalDiv.style.display = 'flex';
+      modalDiv.style.alignItems = 'center';
+      modalDiv.style.justifyContent = 'center';
+      modalDiv.style.zIndex = 99999;
+
+      const inner = document.createElement('div');
+      inner.style.background = 'white';
+      inner.style.padding = '32px 24px';
+      inner.style.borderRadius = '12px';
+      inner.style.textAlign = 'center';
+      inner.style.minWidth = '260px';
+
+      const title = document.createElement('div');
+      title.style.fontSize = '22px';
+      title.style.marginBottom = '18px';
+      title.innerText = '¿Quién guarda el estado?';
+      inner.appendChild(title);
+
+      nombres.forEach((nombre, idx) => {
+        const btn = document.createElement('button');
+        btn.innerText = nombre;
+        btn.className = 'btn btn-primary m-2';
+        btn.style.fontSize = '20px';
+        btn.style.padding = '10px 24px';
+        btn.onclick = () => {
+          document.body.removeChild(modalDiv);
+          resolve(nombre);
+        };
+        inner.appendChild(btn);
+      });
+
+      // Botón "Otro"
+      const otroBtn = document.createElement('button');
+      otroBtn.innerText = 'Otro...';
+      otroBtn.className = 'btn btn-outline-secondary m-2';
+      otroBtn.style.fontSize = '20px';
+      otroBtn.style.padding = '10px 24px';
+      otroBtn.onclick = () => {
+        // Mostrar prompt para escribir el nombre
+        const nombreOtro = window.prompt('Escribe el nombre de quien guarda el estado:');
+        if (nombreOtro && nombreOtro.trim().length > 0) {
+          document.body.removeChild(modalDiv);
+          resolve(nombreOtro.trim());
+        }
       };
+      inner.appendChild(otroBtn);
+
+      const cancel = document.createElement('button');
+      cancel.innerText = 'Cancelar';
+      cancel.className = 'btn btn-link mt-3';
+      cancel.style.fontSize = '18px';
+      cancel.onclick = () => {
+        document.body.removeChild(modalDiv);
+        resolve(null);
+      };
+      inner.appendChild(document.createElement('br'));
+      inner.appendChild(cancel);
+
+      modalDiv.appendChild(inner);
+      document.body.appendChild(modalDiv);
+    }).then(async (nombre) => {
+      if (!nombre) return;
+      // Guarda el estado completo junto con la persona y la fecha
+      const snapshot = {};
+      Object.entries(imgStates).forEach(([id, val]) => {
+        snapshot[id] = {
+          main: val?.main ?? null,
+          secondary: val?.secondary ?? null,
+          src: getSrc(id)
+        };
+      });
+      const now = new Date();
+      const pad = n => n.toString().padStart(2, '0');
+      const key = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+      await set(ref(db, `snapshots/${key}`), snapshot);
+      await set(ref(db, `snapshotsInfo/${key}`), {
+        guardadoPor: nombre,
+        fecha: now.toISOString()
+      });
+      alert('Estado guardado correctamente por ' + nombre + '.');
     });
-    const now = new Date();
-    const pad = n => n.toString().padStart(2, '0');
-    const key = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
-    await set(ref(db, `snapshots/${key}`), snapshot);
-    alert('Estado guardado correctamente.');
   };
 
   // Actualiza Firebase cuando cambia el estado local (evita bucle infinito)
@@ -249,17 +326,26 @@ function App() {
   );
 
   // Solo muestra la notificación una vez por mensaje recibido
-
   const lastPayloadId = useRef(null);
   const lastPayloadTime = useRef(0);
+
   useEffect(() => {
     if (!messaging) return;
+
+    // Escucha mensajes cuando la app está en primer plano
     onMessage(messaging, (payload) => {
-      // Solo maneja lógica de UI si es necesario, pero NO muestres notificación aquí
-      // Ejemplo: puedes actualizar el estado, mostrar un toast interno, etc.
-      // Si quieres, puedes hacer console.log(payload);
-      // console.log("Mensaje recibido en foreground:", payload);
+      // ...puedes manejar lógica de UI aquí si quieres...
+      // No mostrar notificación aquí, FCM ya la muestra si corresponde
     });
+
+    // Evita notificaciones duplicadas en segundo plano (móvil)
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.ready.then((registration) => {
+        if (registration.active) {
+          registration.active.postMessage({ type: 'DISABLE_DUPLICATE_FCM' });
+        }
+      });
+    }
   }, [messaging]);
 
   // --- Sincronización del estado actual entre dispositivos usando localStorage events ---
@@ -458,25 +544,29 @@ function App() {
   const [showAllSnapshots, setShowAllSnapshots] = useState(false);
   const [loadingSnapshots, setLoadingSnapshots] = useState(false);
 
-  // Función para obtener todos los snapshots guardados en Firebase
+  // Función para obtener todos los snapshots guardados en Firebase (con info de quién lo guardó)
   const handleShowAllSnapshots = async () => {
     setLoadingSnapshots(true);
     setShowAllSnapshots(true);
     try {
-      const { getDatabase, ref, get /*, child*/ } = await import("firebase/database");
+      const { getDatabase, ref, get } = await import("firebase/database");
       const db = getDatabase();
-      const snapshotRef = ref(db, "snapshots");
-      const snap = await get(snapshotRef);
-      if (snap.exists()) {
-        // Ordena por clave descendente (más reciente primero)
-        const data = snap.val();
-        const arr = Object.entries(data)
-          .sort((a, b) => b[0].localeCompare(a[0]))
-          .map(([key, value]) => ({ key, value }));
-        setAllSnapshots(arr);
-      } else {
-        setAllSnapshots([]);
-      }
+      // Lee snapshots (máquinas) y snapshotsInfo (quién lo guardó)
+      const [snap, infoSnap] = await Promise.all([
+        get(ref(db, "snapshots")),
+        get(ref(db, "snapshotsInfo"))
+      ]);
+      const data = snap.exists() ? snap.val() : {};
+      const infoData = infoSnap.exists() ? infoSnap.val() : {};
+      // Ordena por clave descendente (más reciente primero)
+      const arr = Object.entries(data)
+        .sort((a, b) => b[0].localeCompare(a[0]))
+        .map(([key, value]) => ({
+          key,
+          value,
+          info: infoData[key] || {}
+        }));
+      setAllSnapshots(arr);
     } catch (e) {
       setAllSnapshots([]);
     }
@@ -2166,19 +2256,25 @@ function App() {
                   >
                     Ver todos en otra pestaña
                   </button>
-                  {allSnapshots.map(({ key, value }) => {
+                  {allSnapshots.map(({ key, value, info }) => {
                     // Formatea la fecha a dd/mm/aa hh:mm
                     let fecha = "";
-                    // eslint-disable-next-line no-unused-vars
                     const match = key.match(/^(\d{4})(\d{2})(\d{2})_(\d{2})(\d{2})/);
                     if (match) {
                       const [/*_*/, y, m, d, h, min] = match;
                       fecha = `${d}/${m}/${y.slice(2)} ${h}:${min}`;
                     }
+                    // Usa solo la fecha/hora de info.fecha si existe, si no la del key
+                    let fechaMostrar = info.fecha
+                      ? new Date(info.fecha).toLocaleString()
+                      : fecha;
                     return (
                       <div key={key} style={{ marginBottom: 18 }}>
                         <div style={{ fontSize: 15, color: "#000", marginBottom: 8 }}>
-                          {fecha}
+                          {fechaMostrar}
+                          {info.guardadoPor && (
+                            <> &nbsp;|&nbsp; <b>{info.guardadoPor}</b></>
+                          )}
                         </div>
                         <div style={{ display: "flex", flexWrap: "wrap", gap: 18 }}>
                           {Object.entries(value).map(([id, state]) => {
