@@ -2077,7 +2077,17 @@ function App() {
           position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
           background: 'rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999
         }}>
-          <div style={{ background: 'white', padding: 24, borderRadius: 8, minWidth: 250, textAlign: 'center' }}>
+          <div
+            style={{
+              background: 'white',
+              padding: 24,
+              borderRadius: 8,
+              minWidth: 250,
+              textAlign: 'center',
+              maxHeight: '90vh',
+              overflowY: 'auto'
+            }}
+          >
             {!modal.main ? (
               <>
                 <div className="mb-3" style={{ fontSize: 24 }}>¿Escoge opción requerida?</div>
@@ -2172,7 +2182,15 @@ function App() {
           position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
           background: 'rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 99999
         }}>
-          <div style={{ background: 'white', padding: 24, borderRadius: 8, minWidth: 320, maxWidth: 900, maxHeight: '90vh', overflow: 'auto' }}>
+          <div style={{
+            background: 'white',
+            padding: 24,
+            borderRadius: 8,
+            minWidth: 320,
+            maxWidth: 900,
+            maxHeight: '90vh',
+            overflow: 'auto'
+          }}>
             <h4>Todos los estados guardados</h4>
             {loadingSnapshots ? (
               <div>Cargando...</div>
