@@ -2094,14 +2094,14 @@ function App() {
                   if (secondaryIdx != null) {
                     const opts = secondaryOptionsMap[mainIdx] || [];
                     return (
-                      <div style={{ marginBottom: 16, fontSize: 18, color: '#007bff' }}>
+                      <div style={{ marginBottom: 16, fontSize: 22, color: '#007bff' }}>
                         Maquina en revision por: <b>{opts[secondaryIdx]}</b>
                       </div>
                     );
                   }
                   return (
-                    <div style={{ marginBottom: 16, fontSize: 18, color: '#888' }}>
-                      Produccion
+                    <div style={{ marginBottom: 16, fontSize: 22, color: '#888' }}>
+                      En Producción
                     </div>
                   );
                 })()}
@@ -2118,8 +2118,8 @@ function App() {
               <>
                 {/* Si es Produccion, no mostrar subopciones ni botones */}
                 {modal.main === 4 ? (
-                  <div className="mb-3" style={{ fontSize: 20, color: "#888" }}>
-                    No hay sub-opciones para Producción.
+                  <div className="mb-3" style={{ fontSize: 22, color: "#888" }}>
+                    En Producción.
                   </div>
                 ) : (
                   <>
