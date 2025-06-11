@@ -2095,13 +2095,13 @@ function App() {
                     const opts = secondaryOptionsMap[mainIdx] || [];
                     return (
                       <div style={{ marginBottom: 16, fontSize: 18, color: '#007bff' }}>
-                        Sub-opción escogida anteriormente: <b>{opts[secondaryIdx]}</b>
+                        Maquina en revision por: <b>{opts[secondaryIdx]}</b>
                       </div>
                     );
                   }
                   return (
                     <div style={{ marginBottom: 16, fontSize: 18, color: '#888' }}>
-                      No hay sub-opción escogida
+                      Produccion
                     </div>
                   );
                 })()}
@@ -2123,7 +2123,7 @@ function App() {
                   </div>
                 ) : (
                   <>
-                    <div className="mb-3" style={{ fontSize: 24 }}>Seleccione una sub-opción</div>
+                    <div className="mb-3" style={{ fontSize: 24 }}>Seleccione una causa</div>
                     {getSecondaryOptions().map((label, idx) => (
                       <button
                         key={idx}
@@ -2152,10 +2152,10 @@ function App() {
           Ver estados guardados del día
         </button> */}
         <button className="btn btn-secondary me-2" onClick={handleShowAllSnapshots}>
-          Ver todos los estados guardados
+          Ver estados guardados
         </button>
         <button className="btn btn-success me-2" onClick={handleSaveSnapshotNow}>
-          Guardar estado ahora
+          Guardar estado
         </button>
         {/* Botón para pedir permiso de notificaciones en móviles */}
         {("Notification" in window && Notification.permission !== "granted" && !notifAsked) && (
