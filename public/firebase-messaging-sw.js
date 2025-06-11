@@ -26,7 +26,7 @@ self.addEventListener('message', (event) => {
 // Elimina la notificación duplicada tanto en onBackgroundMessage como en push
 function shouldSkipNotification(title, body) {
     // Solo filtra si la notificación es exactamente igual a la anterior Y ocurre en menos de 2 segundos
-    // No uses disableDuplicate, así siempre filtra duplicados en cualquier contexto
+    // Además, si ya mostramos una notificación en este evento, no mostrar otra (para móvil)
     const now = Date.now();
     if (
         title === lastNotification.title &&
@@ -36,27 +36,15 @@ function shouldSkipNotification(title, body) {
         return true;
     }
     lastNotification = { title, body, ts: now };
+    // Marca que ya mostramos una notificación en este ciclo de event loop
+    self.__notificationShown = true;
     return false;
 }
 
-// Maneja notificaciones push en segundo plano (cuando la app está cerrada o en background)
-messaging.onBackgroundMessage(function (payload) {
-    console.log('[firebase-messaging-sw.js] onBackgroundMessage payload:', payload);
-    if (payload && payload.notification && payload.notification.title) {
-        const { title, body } = payload.notification;
-        if (shouldSkipNotification(title, body)) return;
-        self.registration.showNotification(title, {
-            body: payload.notification.body || '',
-            icon: payload.notification.icon || '/logo192.png'
-        });
-    } else {
-        console.warn('[firebase-messaging-sw.js] onBackgroundMessage sin notification:', payload);
-    }
-});
-
-// Maneja notificaciones push de FCM
+// Solo permite mostrar una notificación por evento push
 self.addEventListener('push', function (event) {
     if (!event.data) return;
+    if (self.__notificationShown) return; // Ya mostramos una en este ciclo
     const data = event.data.json();
     const { title, body } = data.notification || {};
     if (shouldSkipNotification(title, body)) return;
@@ -71,6 +59,25 @@ self.addEventListener('push', function (event) {
             actions: [{ action: 'open', title: 'Abrir App' }]
         })
     );
+    // Limpia el flag después de un corto tiempo para el siguiente evento
+    setTimeout(() => { self.__notificationShown = false; }, 1000);
+});
+
+// Solo permite mostrar una notificación por evento backgroundMessage
+messaging.onBackgroundMessage(function (payload) {
+    console.log('[firebase-messaging-sw.js] onBackgroundMessage payload:', payload);
+    if (payload && payload.notification && payload.notification.title) {
+        if (self.__notificationShown) return; // Ya mostramos una en este ciclo
+        const { title, body } = payload.notification;
+        if (shouldSkipNotification(title, body)) return;
+        self.registration.showNotification(title, {
+            body: payload.notification.body || '',
+            icon: payload.notification.icon || '/logo192.png'
+        });
+        setTimeout(() => { self.__notificationShown = false; }, 1000);
+    } else {
+        console.warn('[firebase-messaging-sw.js] onBackgroundMessage sin notification:', payload);
+    }
 });
 
 // Maneja clics en la notificación
