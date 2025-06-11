@@ -63,8 +63,8 @@ self.addEventListener('push', function (event) {
     event.waitUntil(
         self.registration.showNotification(title, {
             body,
-            icon: 'https://cdn-icons-png.flaticon.com/512/190/190411.png',
-            badge: 'https://cdn-icons-png.flaticon.com/512/190/190411.png',
+            icon: 'https://res.cloudinary.com/dr64wmtkm/image/upload/v1749675099/dudee6g3rvffuh22qzx2.png',
+            badge: 'https://res.cloudinary.com/dr64wmtkm/image/upload/v1749675099/dudee6g3rvffuh22qzx2.png',
             vibrate: [200, 100, 200],
             data: data,
             actions: [{ action: 'open', title: 'Abrir App' }]
