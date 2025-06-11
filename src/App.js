@@ -478,7 +478,7 @@ function App() {
       }));
       // Notificación solo si es acción local
       fcmSendNotification(
-        `Cambio en máquina ${id}`,
+        `Máquina ${id}`,
         `Estado cambiado a Producción`,
         id
       );
