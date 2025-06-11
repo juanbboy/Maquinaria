@@ -23,11 +23,28 @@ self.addEventListener('message', (event) => {
     }
 });
 
+// Elimina la notificación duplicada tanto en onBackgroundMessage como en push
+function shouldSkipNotification(title, body) {
+    const now = Date.now();
+    if (
+        disableDuplicate &&
+        title === lastNotification.title &&
+        body === lastNotification.body &&
+        now - lastNotification.ts < 2000
+    ) {
+        return true;
+    }
+    lastNotification = { title, body, ts: now };
+    return false;
+}
+
 // Maneja notificaciones push en segundo plano (cuando la app está cerrada o en background)
 messaging.onBackgroundMessage(function (payload) {
     console.log('[firebase-messaging-sw.js] onBackgroundMessage payload:', payload);
     if (payload && payload.notification && payload.notification.title) {
-        self.registration.showNotification(payload.notification.title, {
+        const { title, body } = payload.notification;
+        if (shouldSkipNotification(title, body)) return;
+        self.registration.showNotification(title, {
             body: payload.notification.body || '',
             icon: payload.notification.icon || '/logo192.png'
         });
@@ -41,19 +58,7 @@ self.addEventListener('push', function (event) {
     if (!event.data) return;
     const data = event.data.json();
     const { title, body } = data.notification || {};
-    const now = Date.now();
-
-    // Evita mostrar notificaciones duplicadas en menos de 2 segundos
-    if (
-        disableDuplicate &&
-        title === lastNotification.title &&
-        body === lastNotification.body &&
-        now - lastNotification.ts < 2000
-    ) {
-        // No mostrar duplicado
-        return;
-    }
-    lastNotification = { title, body, ts: now };
+    if (shouldSkipNotification(title, body)) return;
 
     event.waitUntil(
         self.registration.showNotification(title, {
