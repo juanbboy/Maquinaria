@@ -25,9 +25,10 @@ self.addEventListener('message', (event) => {
 
 // Elimina la notificación duplicada tanto en onBackgroundMessage como en push
 function shouldSkipNotification(title, body) {
+    // Solo filtra si la notificación es exactamente igual a la anterior Y ocurre en menos de 2 segundos
+    // No uses disableDuplicate, así siempre filtra duplicados en cualquier contexto
     const now = Date.now();
     if (
-        disableDuplicate &&
         title === lastNotification.title &&
         body === lastNotification.body &&
         now - lastNotification.ts < 2000
