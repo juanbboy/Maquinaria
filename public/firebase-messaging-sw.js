@@ -25,29 +25,28 @@ self.addEventListener('message', (event) => {
 
 // Elimina la notificación duplicada tanto en onBackgroundMessage como en push
 function shouldSkipNotification(title, body) {
-    // En iPhone/Safari, FCM dispara tanto push como onBackgroundMessage.
-    // Solo permite una notificación por evento usando un lock global.
-    if (self.__notificationMobileLock) return true;
+    // Solo bloquea duplicados en móviles, pero nunca bloquea en PC/escritorio
     const now = Date.now();
-    // Detecta móvil por userAgent (si está disponible)
     let isMobile = false;
     try {
-        isMobile = typeof self.navigator !== "undefined" && /iphone|ipad|ipod|ios|mobile/i.test((self.navigator.userAgent || "").toLowerCase());
+        isMobile = typeof self.navigator !== "undefined" && /iphone|ipad|ipod|ios|android|mobile/i.test((self.navigator.userAgent || "").toLowerCase());
     } catch { }
-    // Si es móvil, activa el lock por 2 segundos y bloquea el otro handler
     if (isMobile) {
+        if (self.__notificationMobileLock) return true;
         self.__notificationMobileLock = true;
         setTimeout(() => { self.__notificationMobileLock = false; }, 2000);
+        // Además, filtra duplicados por título/cuerpo en móvil
+        if (
+            title === lastNotification.title &&
+            body === lastNotification.body &&
+            now - lastNotification.ts < 2000
+        ) {
+            return true;
+        }
+        lastNotification = { title, body, ts: now };
+        return false;
     }
-    // Además, filtra duplicados por título/cuerpo
-    if (
-        title === lastNotification.title &&
-        body === lastNotification.body &&
-        now - lastNotification.ts < 2000
-    ) {
-        return true;
-    }
-    lastNotification = { title, body, ts: now };
+    // En PC/escritorio, nunca bloquea ninguna notificación
     return false;
 }
 
