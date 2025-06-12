@@ -252,7 +252,97 @@ function App() {
 
   // Asegúrate de que handleSaveSnapshotNow esté definido dentro de App
   const handleSaveSnapshotNow = async () => {
-    // ...existing code de handleSaveSnapshotNow...
+    const nombres = ["F. Riobo", "N. Castañeda", "M. Gomez", "J. Bobadiila", "J. Salazar"];
+    return new Promise((resolve) => {
+      // Mostrar modal personalizado con botones
+      const modalDiv = document.createElement('div');
+      modalDiv.style.position = 'fixed';
+      modalDiv.style.top = 0;
+      modalDiv.style.left = 0;
+      modalDiv.style.width = '100vw';
+      modalDiv.style.height = '100vh';
+      modalDiv.style.background = 'rgba(0,0,0,0.3)';
+      modalDiv.style.display = 'flex';
+      modalDiv.style.alignItems = 'center';
+      modalDiv.style.justifyContent = 'center';
+      modalDiv.style.zIndex = 99999;
+
+      const inner = document.createElement('div');
+      inner.style.background = 'white';
+      inner.style.padding = '32px 24px';
+      inner.style.borderRadius = '12px';
+      inner.style.textAlign = 'center';
+      inner.style.minWidth = '260px';
+
+      const title = document.createElement('div');
+      title.style.fontSize = '22px';
+      title.style.marginBottom = '18px';
+      title.innerText = '¿Quién guarda el estado?';
+      inner.appendChild(title);
+
+      nombres.forEach((nombre, idx) => {
+        const btn = document.createElement('button');
+        btn.innerText = nombre;
+        btn.className = 'btn btn-primary m-2';
+        btn.style.fontSize = '20px';
+        btn.style.padding = '10px 24px';
+        btn.onclick = () => {
+          document.body.removeChild(modalDiv);
+          resolve(nombre);
+        };
+        inner.appendChild(btn);
+      });
+
+      // Botón "Otro"
+      const otroBtn = document.createElement('button');
+      otroBtn.innerText = 'Otro...';
+      otroBtn.className = 'btn btn-outline-secondary m-2';
+      otroBtn.style.fontSize = '20px';
+      otroBtn.style.padding = '10px 24px';
+      otroBtn.onclick = () => {
+        const nombreOtro = window.prompt('Escribe el nombre de quien guarda el estado:');
+        if (nombreOtro && nombreOtro.trim().length > 0) {
+          document.body.removeChild(modalDiv);
+          resolve(nombreOtro.trim());
+        }
+      };
+      inner.appendChild(otroBtn);
+
+      const cancel = document.createElement('button');
+      cancel.innerText = 'Cancelar';
+      cancel.className = 'btn btn-link mt-3';
+      cancel.style.fontSize = '18px';
+      cancel.onclick = () => {
+        document.body.removeChild(modalDiv);
+        resolve(null);
+      };
+      inner.appendChild(document.createElement('br'));
+      inner.appendChild(cancel);
+
+      modalDiv.appendChild(inner);
+      document.body.appendChild(modalDiv);
+    }).then(async (nombre) => {
+      if (!nombre) return;
+      // Guarda el estado completo junto con la persona y la fecha
+      const snapshot = {};
+      Object.entries(imgStates).forEach(([id, val]) => {
+        snapshot[id] = {
+          main: val?.main ?? null,
+          secondary: val?.secondary ?? null,
+          src: getSrc(id)
+        };
+      });
+      const now = new Date();
+      const pad = n => n.toString().padStart(2, '0');
+      const key = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+      // Guarda snapshot y su info en Firebase
+      await set(ref(db, `snapshots/${key}`), snapshot);
+      await set(ref(db, `snapshotsInfo/${key}`), {
+        guardadoPor: nombre,
+        fecha: now.toISOString()
+      });
+      alert('Estado guardado correctamente por ' + nombre + '.');
+    });
   };
 
   // Helpers para UI
