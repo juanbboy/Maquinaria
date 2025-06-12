@@ -323,19 +323,25 @@ function App() {
       document.body.appendChild(modalDiv);
     }).then(async (nombre) => {
       if (!nombre) return;
-      // Guarda el estado completo junto con la persona y la fecha
+      // Guarda solo los estados que NO son de producción (main !== 4)
       const snapshot = {};
       Object.entries(imgStates).forEach(([id, val]) => {
-        snapshot[id] = {
-          main: val?.main ?? null,
-          secondary: val?.secondary ?? null,
-          src: getSrc(id)
-        };
+        if (val?.main !== 4) {
+          snapshot[id] = {
+            main: val?.main ?? null,
+            secondary: val?.secondary ?? null,
+            src: getSrc(id)
+          };
+        }
       });
+      // Si no hay ningún estado para guardar, muestra aviso y no guarda
+      if (Object.keys(snapshot).length === 0) {
+        alert('No hay estados fuera de producción para guardar.');
+        return;
+      }
       const now = new Date();
       const pad = n => n.toString().padStart(2, '0');
       const key = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
-      // Guarda snapshot y su info en Firebase
       await set(ref(db, `snapshots/${key}`), snapshot);
       await set(ref(db, `snapshotsInfo/${key}`), {
         guardadoPor: nombre,
