@@ -36,40 +36,8 @@ if (typeof window !== "undefined" && "serviceWorker" in navigator) {
 }
 
 function App() {
-  // --- Elimina el forzado de reinicio de render al recargar la página ---
-  // const [instanceKey] = useState(() => Date.now() + "_" + Math.random());
-
-  // --- Opciones y helpers necesarios para la UI ---
-  const secondaryOptionsMap = React.useMemo(() => ({
-    1: [
-      "Transferencia", "Vanizado", "Reviente LC", "Succion", "Reviente L180",
-      "Huecos y rotos", "Aguja", "Selectores", "Motores MPP", "Cuchillas", "correa", "Manguera rota", "Lubricacion", "Otros"
-    ],
-    2: [
-      "Licra", "Nylon", "Motores"
-    ],
-    3: [
-      "Valvulas", "Motores MPP", "No enciende", "Turbina", "Motor principal",
-      "Paros", "Sin programa", "Fusible", "Guia hilos", "Corto circuito", "Carga no conectada", "bloqueo", "Sensor Lubricacion", "Otros"
-    ],
-    4: [],
-    5: [
-      "Transferencia", "Vanizado", "Reviente LC", "Succion", "Reviente L180",
-      "Huecos y rotos", "Aguja", "Selectores", "Motores MPP", "Cuchillas",
-      "Valvulas", "Motores MPP", "No enciende", "Turbina", "Motor principal",
-      "Paros", "Sin programa", "Fusible", "Materia prima", "Motores", "Sensor Lubricacion", "Lubricacion", "Otros"
-    ]
-  }), []);
-
-  const [modal, setModal] = useState({ show: false, target: null, main: null });
-  // --- Cargar estado inicial desde localStorage si existe ---
-  const [imgStates, setImgStates] = useState(() => {
-    try {
-      const local = localStorage.getItem('imgStates');
-      if (local) return JSON.parse(local);
-    } catch { }
-    return {};
-  });
+  // --- Cargar estado inicial SOLO desde Firebase ---
+  const [imgStates, setImgStates] = useState({});
   const isFirstLoad = useRef(true);
   const ignoreNext = useRef(false);
 
@@ -80,13 +48,8 @@ function App() {
       if (remote && typeof remote === "object" && Object.keys(remote).length > 0) {
         ignoreNext.current = true;
         setImgStates(remote);
-        try {
-          localStorage.setItem('imgStates', JSON.stringify(remote));
-        } catch { }
-      } else if (isFirstLoad.current) {
-        // Si el remoto está vacío y es el primer load, intenta cargar localStorage (ya cargado en useState)
-        // No hacer nada aquí para evitar sobrescribir el estado inicial
       }
+      // Si el remoto está vacío, deja el estado vacío
       isFirstLoad.current = false;
     });
     return () => off(dbRef, "value", handler);
@@ -106,159 +69,11 @@ function App() {
     if (!imgStates || Object.keys(imgStates).length === 0) {
       return;
     }
-    try {
-      localStorage.setItem('imgStates', JSON.stringify(imgStates));
-    } catch { }
     set(dbRef, imgStates);
   }, [imgStates]);
 
-  // --- SINCRONIZACIÓN EN TIEMPO REAL ENTRE TODOS LOS DISPOSITIVOS ---
-  // Corrige el borrado del estado al refrescar: solo actualiza el estado local si el remoto NO está vacío
-  useEffect(() => {
-    // En el primer render, intenta cargar localStorage si existe y el remoto está vacío
-    const handler = onValue(dbRef, (snapshot) => {
-      const remote = snapshot.val();
-      if (remote && typeof remote === "object" && Object.keys(remote).length > 0) {
-        ignoreNext.current = true;
-        setImgStates(remote);
-        try {
-          localStorage.setItem('imgStates', JSON.stringify(remote));
-        } catch { }
-      } else if (isFirstLoad.current) {
-        // Si el remoto está vacío y es el primer load, intenta cargar localStorage
-        try {
-          const local = localStorage.getItem('imgStates');
-          if (local) {
-            setImgStates(JSON.parse(local));
-          }
-        } catch { }
-      }
-      isFirstLoad.current = false;
-    });
-    return () => off(dbRef, "value", handler);
-  }, []);
-
-  // --- Sincroniza entre pestañas usando el evento storage ---
-  useEffect(() => {
-    function handleStorage(e) {
-      if (e.key === 'imgStates' && e.newValue) {
-        try {
-          const remote = JSON.parse(e.newValue);
-          setImgStates(remote);
-        } catch { }
-      }
-    }
-    window.addEventListener('storage', handleStorage);
-    return () => window.removeEventListener('storage', handleStorage);
-  }, []);
-
-  // --- Guardar snapshot manualmente con un botón, pregunta quién lo guarda y guarda el estado completo ---
-  const handleSaveSnapshotNow = async () => {
-    const nombres = ["F. Riobo", "N. Castañeda", "M. Gomez", "J. Bobadiila", "J. Salazar"];
-    return new Promise((resolve) => {
-      // Mostrar modal personalizado con botones
-      const modalDiv = document.createElement('div');
-      modalDiv.style.position = 'fixed';
-      modalDiv.style.top = 0;
-      modalDiv.style.left = 0;
-      modalDiv.style.width = '100vw';
-      modalDiv.style.height = '100vh';
-      modalDiv.style.background = 'rgba(0,0,0,0.3)';
-      modalDiv.style.display = 'flex';
-      modalDiv.style.alignItems = 'center';
-      modalDiv.style.justifyContent = 'center';
-      modalDiv.style.zIndex = 99999;
-
-      const inner = document.createElement('div');
-      inner.style.background = 'white';
-      inner.style.padding = '32px 24px';
-      inner.style.borderRadius = '12px';
-      inner.style.textAlign = 'center';
-      inner.style.minWidth = '260px';
-
-      const title = document.createElement('div');
-      title.style.fontSize = '22px';
-      title.style.marginBottom = '18px';
-      title.innerText = '¿Quién guarda el estado?';
-      inner.appendChild(title);
-
-      nombres.forEach((nombre, idx) => {
-        const btn = document.createElement('button');
-        btn.innerText = nombre;
-        btn.className = 'btn btn-primary m-2';
-        btn.style.fontSize = '20px';
-        btn.style.padding = '10px 24px';
-        btn.onclick = () => {
-          document.body.removeChild(modalDiv);
-          resolve(nombre);
-        };
-        inner.appendChild(btn);
-      });
-
-      // Botón "Otro"
-      const otroBtn = document.createElement('button');
-      otroBtn.innerText = 'Otro...';
-      otroBtn.className = 'btn btn-outline-secondary m-2';
-      otroBtn.style.fontSize = '20px';
-      otroBtn.style.padding = '10px 24px';
-      otroBtn.onclick = () => {
-        // Mostrar prompt para escribir el nombre
-        const nombreOtro = window.prompt('Escribe el nombre de quien guarda el estado:');
-        if (nombreOtro && nombreOtro.trim().length > 0) {
-          document.body.removeChild(modalDiv);
-          resolve(nombreOtro.trim());
-        }
-      };
-      inner.appendChild(otroBtn);
-
-      const cancel = document.createElement('button');
-      cancel.innerText = 'Cancelar';
-      cancel.className = 'btn btn-link mt-3';
-      cancel.style.fontSize = '18px';
-      cancel.onclick = () => {
-        document.body.removeChild(modalDiv);
-        resolve(null);
-      };
-      inner.appendChild(document.createElement('br'));
-      inner.appendChild(cancel);
-
-      modalDiv.appendChild(inner);
-      document.body.appendChild(modalDiv);
-    }).then(async (nombre) => {
-      if (!nombre) return;
-      // Guarda el estado completo junto con la persona y la fecha
-      const snapshot = {};
-      Object.entries(imgStates).forEach(([id, val]) => {
-        snapshot[id] = {
-          main: val?.main ?? null,
-          secondary: val?.secondary ?? null,
-          src: getSrc(id)
-        };
-      });
-      const now = new Date();
-      const pad = n => n.toString().padStart(2, '0');
-      const key = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
-      await set(ref(db, `snapshots/${key}`), snapshot);
-      await set(ref(db, `snapshotsInfo/${key}`), {
-        guardadoPor: nombre,
-        fecha: now.toISOString()
-      });
-      alert('Estado guardado correctamente por ' + nombre + '.');
-    });
-  };
-
-  // Actualiza Firebase cuando cambia el estado local (evita bucle infinito)
-
-  useEffect(() => {
-    if (isFirstLoad.current) {
-      isFirstLoad.current = false;
-      return;
-    }
-    set(dbRef, imgStates);
-  }, [imgStates]);
-
-  // --- ELIMINA CUALQUIER USO DE LOCALSTORAGE PARA EL ESTADO ACTUAL ---
-  // (Solo deja localStorage para snapshots diarios, si lo deseas)
+  // --- Elimina cualquier sincronización con localStorage para el estado actual ---
+  // (No uses localStorage para el estado actual, solo para snapshots si lo deseas)
 
   // --- NOTIFICACIONES WEB (COMPATIBILIDAD MÓVIL, INCLUYENDO IPHONE) ---
   // Solicita permiso para notificaciones push (debe ser por interacción del usuario en móviles)
@@ -413,6 +228,32 @@ function App() {
   // cpdrojo, cpdnegro, cpdamarillo, cpdverde, imgRefs no usados
 
   // --- Opciones y helpers necesarios para la UI ---
+  const [modal, setModal] = useState({ show: false, target: null, main: null });
+  const secondaryOptionsMap = React.useMemo(() => ({
+    1: [
+      "Transferencia", "Vanizado", "Reviente LC", "Succion", "Reviente L180", "Piques",
+      "Huecos y rotos", "Aguja", "Selectores", "Motores MPP", "Cuchillas", "correa", "Manguera rota", "Lubricacion", "Otros"
+    ],
+    2: [
+      "Licra", "Nylon", "Motores"
+    ],
+    3: [
+      "Valvulas", "Motores MPP", "No enciende", "Turbina", "Motor principal",
+      "Paros", "Sin programa", "Fusible", "Guia hilos", "Corto circuito", "Carga no conectada", "bloqueo", "Sensor Lubricacion", "Otros"
+    ],
+    4: [],
+    5: [
+      "Transferencia", "Vanizado", "Reviente LC", "Succion", "Reviente L180", "Piques",
+      "Huecos y rotos", "Aguja", "Selectores", "Motores MPP", "Cuchillas",
+      "Valvulas", "Motores MPP", "No enciende", "Turbina", "Motor principal",
+      "Paros", "Sin programa", "Fusible", "Materia prima", "Motores", "Sensor Lubricacion", "Lubricacion", "Otros"
+    ]
+  }), []);
+
+  // Asegúrate de que handleSaveSnapshotNow esté definido dentro de App
+  const handleSaveSnapshotNow = async () => {
+    // ...existing code de handleSaveSnapshotNow...
+  };
 
   // Helpers para UI
   function setImgRef(id) {
