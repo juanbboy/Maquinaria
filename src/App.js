@@ -1640,6 +1640,65 @@ function App() {
             </div>
           </div>
         </div>
+
+        <div className="col ">
+          <div className="row ">
+            <div className="col " >
+              <div>
+                <span className="d-none">4"(Media)</span>
+              </div>
+              <input ref={setImgRef("40")} type="image" onClick={img} src={getSrc("40")} width={60} alt="Placeholder" data-id="40"
+                style={{ borderRadius: 16 }} />
+              <div>
+                <strong>40</strong>
+                <div style={{
+                  fontSize: 14,
+                  color: "#888",
+                  minHeight: 20,
+                  height: 20,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                  width: "100%",
+                  borderRadius: 12
+                }}>
+                  {getSecondaryLabel("40") || "\u00A0"}
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="row ">
+            <div className="col " >
+              <div>
+                <span className="d-none">4"(Media)</span>
+              </div>
+              <input ref={setImgRef("43")} type="image" onClick={img} src={getSrc("43")} width={60} alt="Placeholder" data-id="43"
+                style={{ borderRadius: 16 }} />
+              <div>
+                <strong>43</strong>
+                <div style={{
+                  fontSize: 14,
+                  color: "#888",
+                  minHeight: 20,
+                  height: 20,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                  width: "100%",
+                  borderRadius: 12
+                }}>
+                  {getSecondaryLabel("43") || "\u00A0"}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div className="row py-5 text-center">
