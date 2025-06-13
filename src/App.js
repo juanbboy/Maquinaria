@@ -247,6 +247,9 @@ function App() {
       "Huecos y rotos", "Aguja", "Selectores", "Motores MPP", "Cuchillas",
       "Valvulas", "Motores MPP", "No enciende", "Turbina", "Motor principal",
       "Paros", "Sin programa", "Fusible", "Materia prima", "Motores", "Sensor Lubricacion", "Lubricacion", "Otros"
+    ],
+    6: [
+      "Cambio de talla", "Cambio de referencia"
     ]
   }), []);
 
@@ -378,6 +381,8 @@ function App() {
         return require('./assets/cpdblanco.png');
       case 5: // Seguimiento
         return require('./assets/cpdverde.png');
+      case 6: // Tallaje (Azul)
+        return require('./assets/cpdazul.png');
       default:
         return cpd;
     }
@@ -2178,6 +2183,7 @@ function App() {
                 <button className="btn btn-danger m-2" style={{ fontSize: 28, padding: '16px 32px' }} onClick={() => handleMainOption(1)}>Mecánico</button>
                 <button className="btn btn-dark m-2" style={{ fontSize: 28, padding: '16px 32px' }} onClick={() => handleMainOption(2)}>Barrado</button>
                 <button className="btn btn-warning m-2" style={{ fontSize: 28, padding: '16px 32px' }} onClick={() => handleMainOption(3)}>Electronico</button>
+                <button className="btn btn-primary m-2" style={{ fontSize: 28, padding: '16px 32px', backgroundColor: '#007bff', borderColor: '#007bff' }} onClick={() => handleMainOption(6)}>Tallaje</button>
                 <button className="btn btn-success m-2" style={{ fontSize: 28, padding: '16px 32px' }} onClick={() => handleMainOption(5)}>Seguimiento</button>
                 <button className="btn btn-light m-2" style={{ fontSize: 28, padding: '16px 32px' }} onClick={() => handleMainOption(4)}>Produccion</button>
                 <div>
