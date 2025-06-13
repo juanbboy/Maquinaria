@@ -522,6 +522,59 @@ function App() {
   return (
     <div className="p-4">
       <h1 className="text-center">Circulares Pequeño Diametro</h1>
+      {/* SOLO PARA MÓVIL: Grid ordenado ascendente */}
+      <div className="d-block d-md-none">
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(4, 1fr)",
+          gap: 12,
+          justifyItems: "center"
+        }}>
+          {[
+            // Ordena los IDs de menor a mayor (numéricamente y alfabéticamente)
+            "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8", "S9", "S10", "S11", "S12", "S13", "S14", "S15", "S16", "S17", "S18", "S19",
+            "26", "28", "30", "31", "32", "33", "34", "35", "36", "38", "39", "40", "43", "44", "45", "46", "47", "48", "49", "50", "51", "52", "53", "54", "55", "56", "57", "58", "64", "65", "66", "67", "69", "70", "71", "72", "73", "74", "75", "76"
+          ].map(id => (
+            <div key={id} style={{ marginBottom: 8, width: 90, textAlign: "center" }}>
+              <input
+                ref={setImgRef(id)}
+                type="image"
+                onClick={img}
+                src={getSrc(id)}
+                width={["S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8", "S9", "S10", "S11", "S12", "S13", "S14", "S15", "S16", "S17", "S18", "S19"].includes(id) ? 90 : 60}
+                alt={id}
+                data-id={id}
+                style={{
+                  borderRadius: 16,
+                  marginBottom: 2,
+                  border: "2px solid #eee",
+                  background: "#fff"
+                }}
+              />
+              <div>
+                <strong>{id}</strong>
+              </div>
+              <div style={{
+                fontSize: 13,
+                color: "#888",
+                minHeight: 20,
+                height: 20,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+                width: "100%",
+                borderRadius: 12
+                // background eliminado para dejar sin color
+              }}>
+                {getSecondaryLabel(id) || "\u00A0"}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
       <div className="row py-5 text-center">
         <div className="col p-0 ">
           <div>
