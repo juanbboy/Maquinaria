@@ -238,15 +238,15 @@ function App() {
       "Licra", "Nylon", "Motores"
     ],
     3: [
-      "Valvulas", "Motores MPP", "No enciende", "Turbina", "Motor principal", "Sensores",
-      "Paros", "Sin programa", "Fusible", "Guia hilos", "Corto circuito", "Carga no conectada", "bloqueo", "Sensor Lubricacion", "Otros"
+      "Valvulas", "Motores MPP", "No enciende", "Turbina", "Motor principal", "Sensores", "Bombilla",
+      "Paros", "Sin programa", "Fusible", "Guia hilos", "Corto circuito", "Carga no conectada", "bloqueo", "Sensor Lubricacion", "Bombilla", "Otros"
     ],
     4: [],
     5: [
       "Transferencia", "Vanizado", "Reviente LC", "Succion", "Reviente L180", "Piques",
       "Huecos y rotos", "Aguja", "Selectores", "Motores MPP", "Cuchillas",
-      "Valvulas", "Motores MPP", "No enciende", "Turbina", "Motor principal",
-      "Paros", "Sin programa", "Fusible", "Materia prima", "Motores", "Sensor Lubricacion", "Lubricacion", "Otros"
+      "Valvulas", "Motores MPP", "No enciende", "Turbina", "Motor principal", "Correa",
+      "Paros", "Sin programa", "Fusible", "Materia prima", "Motores", "Sensor Lubricacion", "Lubricacion", "Bombilla", "Otros"
     ],
     6: [
       "Cambio de talla", "Cambio de referencia"
