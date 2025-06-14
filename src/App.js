@@ -354,8 +354,7 @@ function App() {
       alert('Estado guardado correctamente por ' + nombre + '.');
       // Enviar notificación FCM de entrega de turno
       fcmSendNotification(
-        `Entrega de turno registrada por ${nombre}`,
-        `entrega-turno-${nombre}-${Date.now()}`
+        `Entrega de turno registrada por ${nombre}-${Date.now()}`
       );
     });
   };
