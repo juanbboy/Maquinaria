@@ -229,6 +229,8 @@ function App() {
 
   // --- Opciones y helpers necesarios para la UI ---
   const [modal, setModal] = useState({ show: false, target: null, main: null });
+
+  // Define las opciones de subcausas en un solo objeto para usarlo tanto en la UI como en snapshots
   const secondaryOptionsMap = React.useMemo(() => ({
     1: [
       "Transferencia", "Vanizado", "Reviente LC", "Succion", "Reviente L180", "Piques",
@@ -238,15 +240,15 @@ function App() {
       "Licra", "Nylon", "Motores"
     ],
     3: [
-      "Valvulas", "Motores MPP", "No enciende", "Turbina", "Motor principal", "Sensores", "Bombilla",
-      "Paros", "Sin programa", "Fusible", "Guia hilos", "Corto circuito", "Carga no conectada", "bloqueo", "Sensor Lubricacion", "Bombilla", "Otros"
+      "Valvulas", "Motores MPP", "No enciende", "Turbina", "Motor principal", "Sensores",
+      "Paros", "Sin programa", "Fusible", "Guia hilos", "Corto circuito", "Carga no conectada", "bloqueo", "Sensor Lubricacion", "Otros"
     ],
     4: [],
     5: [
       "Transferencia", "Vanizado", "Reviente LC", "Succion", "Reviente L180", "Piques",
       "Huecos y rotos", "Aguja", "Selectores", "Motores MPP", "Cuchillas",
-      "Valvulas", "Motores MPP", "No enciende", "Turbina", "Motor principal", "Correa",
-      "Paros", "Sin programa", "Fusible", "Materia prima", "Motores", "Sensor Lubricacion", "Lubricacion", "Bombilla", "Otros"
+      "Valvulas", "Motores MPP", "No enciende", "Turbina", "Motor principal",
+      "Paros", "Sin programa", "Fusible", "Materia prima", "Motores", "Sensor Lubricacion", "Lubricacion", "Otros"
     ],
     6: [
       "Cambio de talla", "Cambio de referencia"
@@ -2294,7 +2296,8 @@ function App() {
                         2: "Barrado",
                         3: "Electrónico",
                         4: "Producción",
-                        5: "Seguimiento"
+                        5: "Seguimiento",
+                        6: "Tallaje"
                       };
                       const html = `
                         <html>
@@ -2377,28 +2380,10 @@ function App() {
                               2: "Barrado",
                               3: "Electrónico",
                               4: "Producción",
-                              5: "Seguimiento"
+                              5: "Seguimiento",
+                              6: "Tallaje"
                             };
-                            let secondaryOptionsMap = {
-                              1: [
-                                "Transferencia", "Vanizado", "Reviente LC", "Succion", "Reviente L180",
-                                "Huecos y rotos", "Aguja", "Selectores", "Motores MPP", "Cuchillas", "Otros"
-                              ],
-                              2: [
-                                "Materia prima", "Motores"
-                              ],
-                              3: [
-                                "Valvulas", "Motores MPP", "No enciende", "Turbina", "Motor principal",
-                                "Paros", "Sin programa", "Fusible", "Otros"
-                              ],
-                              4: [],
-                              5: [
-                                "Transferencia", "Vanizado", "Reviente LC", "Succion", "Reviente L180",
-                                "Huecos y rotos", "Aguja", "Selectores", "Motores MPP", "Cuchillas",
-                                "Valvulas", "Motores MPP", "No enciende", "Turbina", "Motor principal",
-                                "Paros", "Sin programa", "Fusible", "Materia prima", "Motores", "Otros"
-                              ]
-                            };
+                            // Usa secondaryOptionsMap directamente
                             let mainLabel = mainLabels[state.main] || "";
                             let secondaryLabel = "";
                             if (typeof state === "object" && state.secondary != null && state.main != null && state.main !== 4) {
