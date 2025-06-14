@@ -247,7 +247,7 @@ function App() {
     5: [
       "Transferencia", "Vanizado", "Reviente LC", "Succion", "Reviente L180", "Piques",
       "Huecos y rotos", "Aguja", "Selectores", "Motores MPP", "Cuchillas",
-      "Valvulas", "Motores MPP", "No enciende", "Turbina", "Motor principal",
+      "Valvulas", "Motores MPP", "No enciende", "Turbina", "Motor principal", "Sensores",
       "Paros", "Sin programa", "Fusible", "Materia prima", "Motores", "Sensor Lubricacion", "Lubricacion", "Otros"
     ],
     6: [
