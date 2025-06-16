@@ -234,7 +234,7 @@ function App() {
   const secondaryOptionsMap = React.useMemo(() => ({
     1: [
       "Transferencia", "Vanizado", "Reviente LC", "Succion", "Reviente L180", "Piques",
-      "Huecos y rotos", "Aguja", "Selectores", "Motores MPP", "Cuchillas", "correa", "Manguera rota", "Lubricacion", "Otros"
+      "Huecos y rotos", "Aguja", "Selectores", "Motores MPP", "Cuchillas", "correa", "Manguera rota", "Lubricacion", "Guia hilos", "Otros"
     ],
     2: [
       "Licra", "Nylon", "Motores"
@@ -248,7 +248,7 @@ function App() {
       "Transferencia", "Vanizado", "Reviente LC", "Succion", "Reviente L180", "Piques",
       "Huecos y rotos", "Aguja", "Selectores", "Motores MPP", "Cuchillas",
       "Valvulas", "Motores MPP", "No enciende", "Turbina", "Motor principal", "Sensores",
-      "Paros", "Sin programa", "Fusible", "Materia prima", "Motores", "Sensor Lubricacion", "Lubricacion", "Otros"
+      "Paros", "Sin programa", "Fusible", "Materia prima", "Motores", "Sensor Lubricacion", "Lubricacion", "Guia hilos", "Otros"
     ],
     6: [
       "Cambio de talla", "Cambio de referencia"
