@@ -330,9 +330,8 @@ function App() {
           // Botón cerrar (siempre visible y resaltado)
           const btnCerrar = document.createElement('button');
           btnCerrar.innerText = 'Cerrar';
-          btnCerrar.className = 'btn btn-danger mt-2';
+          btnCerrar.className = 'btn btn-secondary mt-2';
           btnCerrar.style.fontSize = '20px';
-          btnCerrar.style.width = '100%';
           btnCerrar.style.marginTop = '16px';
           btnCerrar.onclick = () => {
             document.body.removeChild(modalDiv);
@@ -473,17 +472,36 @@ function App() {
                     innerSub.appendChild(titleSub);
 
                     secondaryOptionsMap[opt.main].forEach((sub, idx) => {
-                      const btnSub = document.createElement('button');
-                      btnSub.innerText = sub;
-                      btnSub.className = "btn btn-outline-secondary m-2";
-                      btnSub.style.fontSize = "18px";
-                      btnSub.style.padding = "8px 18px";
-                      btnSub.onclick = () => {
-                        bitacoraEstados[id].secondary = idx;
-                        document.body.removeChild(modalSub);
-                        renderStep();
-                      };
-                      innerSub.appendChild(btnSub);
+                      if (sub === "Otros") {
+                        const btnSub = document.createElement('button');
+                        btnSub.innerText = sub;
+                        btnSub.className = "btn btn-outline-secondary m-2";
+                        btnSub.style.fontSize = "18px";
+                        btnSub.style.padding = "8px 18px";
+                        btnSub.onclick = () => {
+                          const custom = window.prompt("Escribe la causa personalizada:");
+                          if (custom && custom.trim().length > 0) {
+                            bitacoraEstados[id].secondary = idx;
+                            bitacoraEstados[id].secondaryCustom = custom.trim();
+                            document.body.removeChild(modalSub);
+                            renderStep();
+                          }
+                        };
+                        innerSub.appendChild(btnSub);
+                      } else {
+                        const btnSub = document.createElement('button');
+                        btnSub.innerText = sub;
+                        btnSub.className = "btn btn-outline-secondary m-2";
+                        btnSub.style.fontSize = "18px";
+                        btnSub.style.padding = "8px 18px";
+                        btnSub.onclick = () => {
+                          bitacoraEstados[id].secondary = idx;
+                          bitacoraEstados[id].secondaryCustom = undefined;
+                          document.body.removeChild(modalSub);
+                          renderStep();
+                        };
+                        innerSub.appendChild(btnSub);
+                      }
                     });
 
                     const btnCancel = document.createElement('button');
@@ -529,8 +547,12 @@ function App() {
             let subLabel = "";
             if (val && typeof val === "object" && val.secondary != null && val.main != null) {
               const opts = secondaryOptionsMap[val.main] || [];
-              subLabel = opts[val.secondary] || "";
-              if (subLabel.length > 18) subLabel = subLabel.slice(0, 15) + "...";
+              if (opts[val.secondary] === "Otros" && val.secondaryCustom) {
+                subLabel = val.secondaryCustom;
+              } else {
+                subLabel = opts[val.secondary] || "";
+                if (subLabel.length > 18) subLabel = subLabel.slice(0, 15) + "...";
+              }
             }
             const subDiv = document.createElement('div');
             subDiv.style.fontSize = "13px";
@@ -664,6 +686,9 @@ function App() {
       return "";
     }
     const opts = secondaryOptionsMap[val.main] || [];
+    if (opts[val.secondary] === "Otros" && val.secondaryCustom) {
+      return val.secondaryCustom;
+    }
     const label = opts[val.secondary] || "";
     if (label.length > 18) {
       return label.slice(0, 15) + "...";
@@ -699,13 +724,19 @@ function App() {
     setModal((prev) => ({ ...prev, main }));
   }
 
-  function handleSecondaryOption(secondaryIdx) {
+  // Cambios para permitir subopción personalizada ("Otros")
+  function handleSecondaryOption(secondaryIdx, customText) {
     if (!modal.target || !modal.main) return;
     const id = modal.target.getAttribute('data-id');
     let src = getSrc(id);
     setImgStates(prev => ({
       ...prev,
-      [id]: { src, secondary: secondaryIdx, main: modal.main }
+      [id]: {
+        src,
+        secondary: secondaryIdx,
+        main: modal.main,
+        secondaryCustom: (secondaryIdx !== undefined && getSecondaryOptions()[secondaryIdx] === "Otros") ? customText : undefined
+      }
     }));
     // Notificación solo si es acción local
     const mainLabels = {
@@ -716,7 +747,9 @@ function App() {
       5: "Seguimiento"
     };
     const mainLabel = mainLabels[modal.main] || "";
-    const subLabel = secondaryOptionsMap[modal.main][secondaryIdx] || "";
+    const subLabel = getSecondaryOptions()[secondaryIdx] === "Otros"
+      ? customText
+      : getSecondaryOptions()[secondaryIdx] || "";
     fcmSendNotification(
       `Máquina ${id}`,
       `${mainLabel}${subLabel ? " - " + subLabel : ""}`,
@@ -2473,14 +2506,32 @@ function App() {
                     <>
                       <div className="mb-3" style={{ fontSize: 24 }}>Seleccione una causa</div>
                       {getSecondaryOptions().map((label, idx) => (
-                        <button
-                          key={idx}
-                          className="btn btn-outline-secondary m-2"
-                          style={{ fontSize: 24, padding: '12px 24px' }}
-                          onClick={() => handleSecondaryOption(idx)}
-                        >
-                          {label}
-                        </button>
+                        label === "Otros" ? (
+
+                          <button key={idx}
+                            className="btn btn-outline-secondary m-2"
+                            style={{ fontSize: 24, padding: '12px 24px' }}
+                            onClick={() => {
+                              // Mostrar input para texto personalizado
+                              const custom = window.prompt("Escribe la causa personalizada:");
+                              if (custom && custom.trim().length > 0) {
+                                handleSecondaryOption(idx, custom.trim());
+                              }
+                            }}
+                          >
+                            Otros
+                          </button>
+
+                        ) : (
+                          <button
+                            key={idx}
+                            className="btn btn-outline-secondary m-2"
+                            style={{ fontSize: 24, padding: '12px 24px' }}
+                            onClick={() => handleSecondaryOption(idx)}
+                          >
+                            {label}
+                          </button>
+                        )
                       ))}
                     </>
                   )}
@@ -2757,8 +2808,12 @@ function App() {
                                     let subLabel = "";
                                     if (val && typeof val === "object" && val.secondary != null && val.main != null) {
                                       const opts = secondaryOptionsMap[val.main] || [];
-                                      subLabel = opts[val.secondary] || "";
-                                      if (subLabel.length > 18) subLabel = subLabel.slice(0, 15) + "...";
+                                      if (opts[val.secondary] === "Otros" && val.secondaryCustom) {
+                                        subLabel = val.secondaryCustom;
+                                      } else {
+                                        subLabel = opts[val.secondary] || "";
+                                        if (subLabel.length > 18) subLabel = subLabel.slice(0, 15) + "...";
+                                      }
                                     }
                                     const subDiv = document.createElement('div');
                                     subDiv.style.fontSize = "13px";
@@ -2844,7 +2899,7 @@ function App() {
               {/* Botón cerrar modal visible abajo */}
               <div style={{ textAlign: "center", marginTop: 24 }}>
                 <button
-                  className="btn btn-danger"
+                  className="btn btn-secondary"
                   style={{ fontSize: 18, padding: "8px 32px" }}
                   onClick={() => setShowAllSnapshots(false)}
                 >
