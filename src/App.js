@@ -257,7 +257,7 @@ function App() {
 
   // Asegúrate de que handleSaveSnapshotNow esté definido dentro de App
   const handleSaveSnapshotNow = async () => {
-    const nombres = ["F. Riobo", "N. Castañeda", "M. Gomez", "J. Bobadiila", "J. Salazar"];
+    const nombres = ["F. Riobo", "N. Castañeda", "M. Gomez", "J. Bobadilla", "J. Salazar"];
     let step = 1;
     let nombreSeleccionado = null;
     let bitacoraEstados = {};
@@ -2507,7 +2507,6 @@ function App() {
                       <div className="mb-3" style={{ fontSize: 24 }}>Seleccione una causa</div>
                       {getSecondaryOptions().map((label, idx) => (
                         label === "Otros" ? (
-
                           <button key={idx}
                             className="btn btn-outline-secondary m-2"
                             style={{ fontSize: 24, padding: '12px 24px' }}
