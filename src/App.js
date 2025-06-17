@@ -258,8 +258,12 @@ function App() {
   // Asegúrate de que handleSaveSnapshotNow esté definido dentro de App
   const handleSaveSnapshotNow = async () => {
     const nombres = ["F. Riobo", "N. Castañeda", "M. Gomez", "J. Bobadiila", "J. Salazar"];
+    let step = 1;
+    let nombreSeleccionado = null;
+    let bitacoraEstados = {};
+    let maquinasSeleccionadas = [];
     return new Promise((resolve) => {
-      // Mostrar modal personalizado con botones
+      // Paso 1: pedir nombre
       const modalDiv = document.createElement('div');
       modalDiv.style.position = 'fixed';
       modalDiv.style.top = 0;
@@ -279,54 +283,310 @@ function App() {
       inner.style.textAlign = 'center';
       inner.style.minWidth = '260px';
 
-      const title = document.createElement('div');
-      title.style.fontSize = '22px';
-      title.style.marginBottom = '18px';
-      title.innerText = '¿Quién guarda el estado?';
-      inner.appendChild(title);
+      const renderStep = () => {
+        inner.innerHTML = '';
+        if (step === 1) {
+          const title = document.createElement('div');
+          title.style.fontSize = '22px';
+          title.style.marginBottom = '18px';
+          title.innerText = '¿Quién guarda el estado?';
+          inner.appendChild(title);
 
-      nombres.forEach((nombre, idx) => {
-        const btn = document.createElement('button');
-        btn.innerText = nombre;
-        btn.className = 'btn btn-primary m-2';
-        btn.style.fontSize = '20px';
-        btn.style.padding = '10px 24px';
-        btn.onclick = () => {
-          document.body.removeChild(modalDiv);
-          resolve(nombre);
-        };
-        inner.appendChild(btn);
-      });
+          nombres.forEach((nombre, idx) => {
+            const btn = document.createElement('button');
+            btn.innerText = nombre;
+            btn.className = 'btn btn-primary m-2';
+            btn.style.fontSize = '20px';
+            btn.style.padding = '10px 24px';
+            btn.onclick = () => {
+              nombreSeleccionado = nombre;
+              step = 2;
+              renderStep();
+            };
+            inner.appendChild(btn);
+          });
 
-      // Botón "Otro"
-      const otroBtn = document.createElement('button');
-      otroBtn.innerText = 'Otro...';
-      otroBtn.className = 'btn btn-outline-secondary m-2';
-      otroBtn.style.fontSize = '20px';
-      otroBtn.style.padding = '10px 24px';
-      otroBtn.onclick = () => {
-        const nombreOtro = window.prompt('Escribe el nombre de quien guarda el estado:');
-        if (nombreOtro && nombreOtro.trim().length > 0) {
-          document.body.removeChild(modalDiv);
-          resolve(nombreOtro.trim());
+          // Botón "Otro"
+          const otroBtn = document.createElement('button');
+          otroBtn.innerText = 'Otro...';
+          otroBtn.className = 'btn btn-outline-secondary m-2';
+          otroBtn.style.fontSize = '20px';
+          otroBtn.style.padding = '10px 24px';
+          otroBtn.onclick = () => {
+            const nombreOtro = window.prompt('Escribe el nombre de quien guarda el estado:');
+            if (nombreOtro && nombreOtro.trim().length > 0) {
+              nombreSeleccionado = nombreOtro.trim();
+              step = 2;
+              renderStep();
+            }
+          };
+          inner.appendChild(otroBtn);
+
+          // Espaciado para separar los botones de nombre del botón cerrar
+          const spacer = document.createElement('div');
+          spacer.style.height = '24px';
+          inner.appendChild(spacer);
+
+          // Botón cerrar (siempre visible y resaltado)
+          const btnCerrar = document.createElement('button');
+          btnCerrar.innerText = 'Cerrar';
+          btnCerrar.className = 'btn btn-danger mt-2';
+          btnCerrar.style.fontSize = '20px';
+          btnCerrar.style.width = '100%';
+          btnCerrar.style.marginTop = '16px';
+          btnCerrar.onclick = () => {
+            document.body.removeChild(modalDiv);
+            resolve(null);
+          };
+          inner.appendChild(btnCerrar);
+        } else if (step === 2) {
+          // Bitácora: Render gráfico igual a la página principal
+          const title = document.createElement('div');
+          title.style.fontSize = '22px';
+          title.style.marginBottom = '18px';
+          title.innerText = 'Bitácora del día: selecciona el estado de cada máquina atendida';
+          inner.appendChild(title);
+
+          // Lista de máquinas
+          const maquinas = [
+            "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8", "S9", "S10", "S11", "S12", "S13", "S14", "S15", "S16", "S17", "S18", "S19",
+            "26", "28", "30", "31", "32", "33", "34", "35", "36", "38", "39", "40", "43", "44", "45", "46", "47", "48", "49", "50", "51", "52", "53", "54", "55", "56", "57", "58", "64", "65", "66", "67", "69", "70", "71", "72", "73", "74", "75", "76"
+          ];
+
+          // Contenedor con scroll
+          const scrollContainer = document.createElement('div');
+          scrollContainer.style.maxHeight = '60vh';
+          scrollContainer.style.overflowY = 'auto';
+          scrollContainer.style.marginBottom = '18px';
+
+          // Render grid igual a la página principal
+          const grid = document.createElement('div');
+          grid.style.display = "grid";
+          grid.style.gap = "0";
+          grid.style.justifyItems = "center";
+          grid.style.gridTemplateColumns = "repeat(auto-fit, minmax(90px, 1fr))";
+          grid.style.marginBottom = "18px";
+
+          maquinas.forEach(id => {
+            const cell = document.createElement('div');
+            cell.style.marginBottom = "2px";
+            cell.style.width = "90px";
+            cell.style.textAlign = "center";
+
+            // Imagen
+            const input = document.createElement('input');
+            input.type = "image";
+            input.width = ["S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8", "S9", "S10", "S11", "S12", "S13", "S14", "S15", "S16", "S17", "S18", "S19"].includes(id) ? 90 : 60;
+            input.style.borderRadius = "16px";
+            input.style.marginBottom = "0";
+            input.style.border = "2px solid #eee";
+            input.style.background = "#fff";
+            input.setAttribute("data-id", id);
+            // Usa getSrc para mostrar el estado seleccionado, si no, blanco
+            input.src = (() => {
+              const val = bitacoraEstados[id];
+              if (!val || val.main == null) return cpd;
+              switch (val.main) {
+                case 1: return require('./assets/cpdrojo.png');
+                case 2: return require('./assets/cpdnegro.png');
+                case 3: return require('./assets/cpdamarillo.png');
+                case 4: return require('./assets/cpdblanco.png');
+                case 5: return require('./assets/cpdverde.png');
+                case 6: return require('./assets/cpdazul.png');
+                default: return cpd;
+              }
+            })();
+            input.onclick = (event) => {
+              // Modal para seleccionar opción y subopción igual que en la app principal
+              const id = event.target.getAttribute('data-id');
+              // Modal simple para seleccionar opción principal
+              const modalOpc = document.createElement('div');
+              modalOpc.style.position = 'fixed';
+              modalOpc.style.top = 0;
+              modalOpc.style.left = 0;
+              modalOpc.style.width = '100vw';
+              modalOpc.style.height = '100vh';
+              modalOpc.style.background = 'rgba(0,0,0,0.3)';
+              modalOpc.style.display = 'flex';
+              modalOpc.style.alignItems = 'center';
+              modalOpc.style.justifyContent = 'center';
+              modalOpc.style.zIndex = 999999;
+
+              const innerOpc = document.createElement('div');
+              innerOpc.style.background = 'white';
+              innerOpc.style.padding = '24px';
+              innerOpc.style.borderRadius = '12px';
+              innerOpc.style.textAlign = 'center';
+              innerOpc.style.minWidth = '220px';
+
+              const titleOpc = document.createElement('div');
+              titleOpc.style.fontSize = '20px';
+              titleOpc.style.marginBottom = '16px';
+              titleOpc.innerText = `Máquina ${id}: Selecciona opción`;
+              innerOpc.appendChild(titleOpc);
+
+              [
+                { label: "Mecánico", main: 1, className: "btn btn-danger" },
+                { label: "Barrado", main: 2, className: "btn btn-dark" },
+                { label: "Electrónico", main: 3, className: "btn btn-warning" },
+                { label: "Tallaje", main: 6, className: "btn btn-primary", style: { backgroundColor: "#007bff", borderColor: "#007bff" } },
+                { label: "Seguimiento", main: 5, className: "btn btn-success" },
+                { label: "Producción", main: 4, className: "btn btn-light" }
+              ].forEach(opt => {
+                const btn = document.createElement('button');
+                btn.innerText = opt.label;
+                btn.className = opt.className + " m-2";
+                btn.style.fontSize = "20px";
+                btn.style.padding = "10px 24px";
+                if (opt.style) Object.assign(btn.style, opt.style);
+                btn.onclick = () => {
+                  if (!bitacoraEstados[id]) bitacoraEstados[id] = {};
+                  bitacoraEstados[id].main = opt.main;
+                  bitacoraEstados[id].secondary = null;
+                  document.body.removeChild(modalOpc);
+                  // Si no es producción, pedir subopción
+                  if (opt.main !== 4 && secondaryOptionsMap[opt.main] && secondaryOptionsMap[opt.main].length > 0) {
+                    // Modal subopción
+                    const modalSub = document.createElement('div');
+                    modalSub.style.position = 'fixed';
+                    modalSub.style.top = 0;
+                    modalSub.style.left = 0;
+                    modalSub.style.width = '100vw';
+                    modalSub.style.height = '100vh';
+                    modalSub.style.background = 'rgba(0,0,0,0.3)';
+                    modalSub.style.display = 'flex';
+                    modalSub.style.alignItems = 'center';
+                    modalSub.style.justifyContent = 'center';
+                    modalSub.style.zIndex = 999999;
+
+                    const innerSub = document.createElement('div');
+                    innerSub.style.background = 'white';
+                    innerSub.style.padding = '24px';
+                    innerSub.style.borderRadius = '12px';
+                    innerSub.style.textAlign = 'center';
+                    innerSub.style.minWidth = '220px';
+
+                    const titleSub = document.createElement('div');
+                    titleSub.style.fontSize = '20px';
+                    titleSub.style.marginBottom = '16px';
+                    titleSub.innerText = `Máquina ${id}: Selecciona subopción`;
+                    innerSub.appendChild(titleSub);
+
+                    secondaryOptionsMap[opt.main].forEach((sub, idx) => {
+                      const btnSub = document.createElement('button');
+                      btnSub.innerText = sub;
+                      btnSub.className = "btn btn-outline-secondary m-2";
+                      btnSub.style.fontSize = "18px";
+                      btnSub.style.padding = "8px 18px";
+                      btnSub.onclick = () => {
+                        bitacoraEstados[id].secondary = idx;
+                        document.body.removeChild(modalSub);
+                        renderStep();
+                      };
+                      innerSub.appendChild(btnSub);
+                    });
+
+                    const btnCancel = document.createElement('button');
+                    btnCancel.innerText = "Cancelar";
+                    btnCancel.className = "btn btn-link mt-3";
+                    btnCancel.style.fontSize = "16px";
+                    btnCancel.onclick = () => {
+                      document.body.removeChild(modalSub);
+                    };
+                    innerSub.appendChild(btnCancel);
+
+                    modalSub.appendChild(innerSub);
+                    document.body.appendChild(modalSub);
+                  } else {
+                    renderStep();
+                  }
+                };
+                innerOpc.appendChild(btn);
+              });
+
+              const btnCancel = document.createElement('button');
+              btnCancel.innerText = "Cancelar";
+              btnCancel.className = "btn btn-link mt-3";
+              btnCancel.style.fontSize = "16px";
+              btnCancel.onclick = () => {
+                document.body.removeChild(modalOpc);
+              };
+              innerOpc.appendChild(btnCancel);
+
+              modalOpc.appendChild(innerOpc);
+              document.body.appendChild(modalOpc);
+            };
+
+            cell.appendChild(input);
+
+            // ID
+            const idDiv = document.createElement('div');
+            idDiv.innerHTML = `<strong>${id}</strong>`;
+            cell.appendChild(idDiv);
+
+            // Etiqueta subopción
+            const val = bitacoraEstados[id];
+            let subLabel = "";
+            if (val && typeof val === "object" && val.secondary != null && val.main != null) {
+              const opts = secondaryOptionsMap[val.main] || [];
+              subLabel = opts[val.secondary] || "";
+              if (subLabel.length > 18) subLabel = subLabel.slice(0, 15) + "...";
+            }
+            const subDiv = document.createElement('div');
+            subDiv.style.fontSize = "13px";
+            subDiv.style.color = "#888";
+            subDiv.style.minHeight = "20px";
+            subDiv.style.height = "20px";
+            subDiv.style.display = "flex";
+            subDiv.style.alignItems = "center";
+            subDiv.style.justifyContent = "center";
+            subDiv.style.overflow = "hidden";
+            subDiv.style.textOverflow = "ellipsis";
+            subDiv.style.whiteSpace = "nowrap";
+            subDiv.style.width = "100%";
+            subDiv.style.borderRadius = "12px";
+            subDiv.innerText = subLabel || "\u00A0";
+            cell.appendChild(subDiv);
+
+            grid.appendChild(cell);
+          });
+
+          scrollContainer.appendChild(grid);
+          inner.appendChild(scrollContainer);
+
+          const btnGuardar = document.createElement('button');
+          btnGuardar.innerText = 'Guardar estado';
+          btnGuardar.className = 'btn btn-success m-2';
+          btnGuardar.style.fontSize = '20px';
+          btnGuardar.style.padding = '10px 24px';
+          btnGuardar.onclick = () => {
+            // Solo guarda las máquinas que tengan main seleccionado
+            const seleccionadas = maquinas.filter(id => bitacoraEstados[id] && bitacoraEstados[id].main != null);
+            document.body.removeChild(modalDiv);
+            resolve({ nombre: nombreSeleccionado, bitacora: seleccionadas, bitacoraEstados: { ...bitacoraEstados } });
+          };
+          inner.appendChild(btnGuardar);
+
+          const btnAtras = document.createElement('button');
+          btnAtras.innerText = 'Volver';
+          btnAtras.className = 'btn btn-link mt-3';
+          btnAtras.style.fontSize = '18px';
+          btnAtras.onclick = () => {
+            step = 1;
+            renderStep();
+          };
+          inner.appendChild(btnAtras);
         }
       };
-      inner.appendChild(otroBtn);
 
-      const cancel = document.createElement('button');
-      cancel.innerText = 'Cancelar';
-      cancel.className = 'btn btn-link mt-3';
-      cancel.style.fontSize = '18px';
-      cancel.onclick = () => {
-        document.body.removeChild(modalDiv);
-        resolve(null);
-      };
-      inner.appendChild(cancel);
-
+      renderStep();
       modalDiv.appendChild(inner);
       document.body.appendChild(modalDiv);
-    }).then(async (nombre) => {
-      if (!nombre) return;
+    }).then(async (result) => {
+      if (!result) return;
+      const nombre = typeof result === "string" ? result : result.nombre;
+      const bitacora = typeof result === "string" ? [] : result.bitacora || [];
+      const bitacoraEstados = typeof result === "string" ? {} : result.bitacoraEstados || {};
       // Guarda solo los estados que NO son de producción (main !== 4)
       const snapshot = {};
       Object.entries(imgStates).forEach(([id, val]) => {
@@ -349,12 +609,16 @@ function App() {
       await set(ref(db, `snapshots/${key}`), snapshot);
       await set(ref(db, `snapshotsInfo/${key}`), {
         guardadoPor: nombre,
-        fecha: now.toISOString()
+        fecha: now.toISOString(),
+        bitacora: bitacora,
+        bitacoraEstados: bitacoraEstados
       });
       alert('Estado guardado correctamente por ' + nombre + '.');
       // Enviar notificación FCM de entrega de turno
       fcmSendNotification(
-        `Entrega de turno registrada por ${nombre}-${Date.now()}`
+        "Entrega de turno registrada",
+        `Entrega de turno registrada por ${nombre}`,
+        `entrega-turno-${nombre}-${Date.now()}`
       );
     });
   };
@@ -1582,6 +1846,7 @@ function App() {
                 <div>
                   <strong>51</strong>
                   <div style={{
+
                     fontSize: 14,
                     color: "#888",
                     minHeight: 20,
@@ -2143,92 +2408,94 @@ function App() {
         </div>
       </div>
       {/* Modal de opciones */}
-      {modal.show && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
-          background: 'rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999
-        }}>
-          <div
-            style={{
-              background: 'white',
-              padding: 24,
-              borderRadius: 8,
-              minWidth: 250,
-              textAlign: 'center',
-              maxHeight: '90vh',
-              overflowY: 'auto'
-            }}
-          >
-            {!modal.main ? (
-              <>
-                <div className="mb-3" style={{ fontSize: 24 }}>¿Escoge opción requerida?</div>
-                {/* Mostrar subopción elegida anteriormente si existe */}
-                {(() => {
-                  let id = modal.target && modal.target.getAttribute('data-id');
-                  let val = id && imgStates[id];
-                  let secondaryIdx = null;
-                  let mainIdx = 1;
-                  if (val && typeof val === "object" && val.secondary != null) {
-                    secondaryIdx = val.secondary;
-                    mainIdx = val.main || 1;
-                  }
-                  if (secondaryIdx != null) {
-                    const opts = secondaryOptionsMap[mainIdx] || [];
+      {
+        modal.show && (
+          <div style={{
+            position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
+            background: 'rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999
+          }}>
+            <div
+              style={{
+                background: 'white',
+                padding: 24,
+                borderRadius: 8,
+                minWidth: 250,
+                textAlign: 'center',
+                maxHeight: '90vh',
+                overflowY: 'auto'
+              }}
+            >
+              {!modal.main ? (
+                <>
+                  <div className="mb-3" style={{ fontSize: 24 }}>¿Escoge opción requerida?</div>
+                  {/* Mostrar subopción elegida anteriormente si existe */}
+                  {(() => {
+                    let id = modal.target && modal.target.getAttribute('data-id');
+                    let val = id && imgStates[id];
+                    let secondaryIdx = null;
+                    let mainIdx = 1;
+                    if (val && typeof val === "object" && val.secondary != null) {
+                      secondaryIdx = val.secondary;
+                      mainIdx = val.main || 1;
+                    }
+                    if (secondaryIdx != null) {
+                      const opts = secondaryOptionsMap[mainIdx] || [];
+                      return (
+                        <div style={{ marginBottom: 16, fontSize: 22, color: '#007bff' }}>
+                          Maquina en revision por: <b>{opts[secondaryIdx]}</b>
+                        </div>
+                      );
+                    }
                     return (
-                      <div style={{ marginBottom: 16, fontSize: 22, color: '#007bff' }}>
-                        Maquina en revision por: <b>{opts[secondaryIdx]}</b>
+                      <div style={{ marginBottom: 16, fontSize: 22, color: '#888' }}>
+                        En Producción
                       </div>
                     );
-                  }
-                  return (
-                    <div style={{ marginBottom: 16, fontSize: 22, color: '#888' }}>
-                      En Producción
-                    </div>
-                  );
-                })()}
-                <button className="btn btn-danger m-2" style={{ fontSize: 28, padding: '16px 32px' }} onClick={() => handleMainOption(1)}>Mecánico</button>
-                <button className="btn btn-dark m-2" style={{ fontSize: 28, padding: '16px 32px' }} onClick={() => handleMainOption(2)}>Barrado</button>
-                <button className="btn btn-warning m-2" style={{ fontSize: 28, padding: '16px 32px' }} onClick={() => handleMainOption(3)}>Electronico</button>
-                <button className="btn btn-primary m-2" style={{ fontSize: 28, padding: '16px 32px', backgroundColor: '#007bff', borderColor: '#007bff' }} onClick={() => handleMainOption(6)}>Tallaje</button>
-                <button className="btn btn-success m-2" style={{ fontSize: 28, padding: '16px 32px' }} onClick={() => handleMainOption(5)}>Seguimiento</button>
-                <button className="btn btn-light m-2" style={{ fontSize: 28, padding: '16px 32px' }} onClick={() => handleMainOption(4)}>Produccion</button>
-                <div>
-                  <button className="btn btn-link mt-3" style={{ fontSize: 20 }} onClick={() => setModal({ show: false, target: null, main: null })}>Cancelar</button>
-                </div>
-              </>
-            ) : (
-              <>
-                {/* Si es Produccion, no mostrar subopciones ni botones */}
-                {modal.main === 4 ? (
-                  <div className="mb-3" style={{ fontSize: 22, color: "#888" }}>
-                    En Producción.
+                  })()}
+                  <button className="btn btn-danger m-2" style={{ fontSize: 28, padding: '16px 32px' }} onClick={() => handleMainOption(1)}>Mecánico</button>
+                  <button className="btn btn-dark m-2" style={{ fontSize: 28, padding: '16px 32px' }} onClick={() => handleMainOption(2)}>Barrado</button>
+                  <button className="btn btn-warning m-2" style={{ fontSize: 28, padding: '16px 32px' }} onClick={() => handleMainOption(3)}>Electronico</button>
+                  <button className="btn btn-primary m-2" style={{ fontSize: 28, padding: '16px 32px', backgroundColor: '#007bff', borderColor: '#007bff' }} onClick={() => handleMainOption(6)}>Tallaje</button>
+                  <button className="btn btn-success m-2" style={{ fontSize: 28, padding: '16px 32px' }} onClick={() => handleMainOption(5)}>Seguimiento</button>
+                  <button className="btn btn-light m-2" style={{ fontSize: 28, padding: '16px 32px' }} onClick={() => handleMainOption(4)}>Produccion</button>
+                  <div>
+                    <button className="btn btn-link mt-3" style={{ fontSize: 20 }} onClick={() => setModal({ show: false, target: null, main: null })}>Cancelar</button>
                   </div>
-                ) : (
-                  <>
-                    <div className="mb-3" style={{ fontSize: 24 }}>Seleccione una causa</div>
-                    {getSecondaryOptions().map((label, idx) => (
-                      <button
-                        key={idx}
-                        className="btn btn-outline-secondary m-2"
-                        style={{ fontSize: 24, padding: '12px 24px' }}
-                        onClick={() => handleSecondaryOption(idx)}
-                      >
-                        {label}
-                      </button>
-                    ))}
-                  </>
-                )}
-                <div>
-                  <button className="btn btn-link mt-3" style={{ fontSize: 20 }} onClick={() => setModal({ show: false, target: null, main: null })}>Cancelar</button>
-                  {modal.main !== 4 && (
-                    <button className="btn btn-link mt-3" style={{ fontSize: 20 }} onClick={() => setModal({ show: true, target: modal.target, main: null })}>Volver</button>
+                </>
+              ) : (
+                <>
+                  {/* Si es Produccion, no mostrar subopciones ni botones */}
+                  {modal.main === 4 ? (
+                    <div className="mb-3" style={{ fontSize: 22, color: "#888" }}>
+                      En Producción.
+                    </div>
+                  ) : (
+                    <>
+                      <div className="mb-3" style={{ fontSize: 24 }}>Seleccione una causa</div>
+                      {getSecondaryOptions().map((label, idx) => (
+                        <button
+                          key={idx}
+                          className="btn btn-outline-secondary m-2"
+                          style={{ fontSize: 24, padding: '12px 24px' }}
+                          onClick={() => handleSecondaryOption(idx)}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </>
                   )}
-                </div>
-              </>
-            )}
+                  <div>
+                    <button className="btn btn-link mt-3" style={{ fontSize: 20 }} onClick={() => setModal({ show: false, target: null, main: null })}>Cancelar</button>
+                    {modal.main !== 4 && (
+                      <button className="btn btn-link mt-3" style={{ fontSize: 20 }} onClick={() => setModal({ show: true, target: modal.target, main: null })}>Volver</button>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
           </div>
-        </div>
-      )}
+        )
+      }
       <div className="mb-3 text-end">
         {/* <button className="btn btn-info me-2" onClick={handleShowSnapshot}>
           Ver estados guardados del día
@@ -2249,61 +2516,81 @@ function App() {
 
 
       {/* Modal para mostrar todos los snapshots guardados */}
-      {showAllSnapshots && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
-          background: 'rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 99999
-        }}>
+      {
+        showAllSnapshots && (
           <div style={{
-            background: 'white',
-            padding: 24,
-            borderRadius: 8,
-            minWidth: 320,
-            maxWidth: 900,
-            maxHeight: '90vh',
-            overflow: 'auto'
+            position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
+            background: 'rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 99999
           }}>
-            <h4>Todos los estados guardados</h4>
-            {loadingSnapshots ? (
-              <div>Cargando...</div>
-            ) : (
-              allSnapshots.length === 0 ? (
-                <div>No hay snapshots guardados.</div>
+            <div style={{
+              background: 'white',
+              padding: 24,
+              borderRadius: 8,
+              minWidth: 320,
+              maxWidth: 900,
+              maxHeight: '90vh',
+              overflow: 'auto'
+            }}>
+              {/* Botón cerrar visible arriba a la derecha */}
+              <button
+                onClick={() => setShowAllSnapshots(false)}
+                style={{
+                  position: 'absolute',
+                  top: 12,
+                  right: 12,
+                  zIndex: 1000,
+                  fontSize: 22,
+                  background: 'transparent',
+                  border: 'none',
+                  color: '#333',
+                  cursor: 'pointer'
+                }}
+                aria-label="Cerrar"
+                title="Cerrar"
+              >
+                ×
+              </button>
+              <h4>Todos los estados guardados</h4>
+              {loadingSnapshots ? (
+                <div>Cargando...</div>
               ) : (
-                <div style={{ maxHeight: 500, overflowY: 'auto' }}>
-                  <button
-                    className="btn btn-primary mb-3"
-                    onClick={() => {
-                      // Renderiza la app con la información guardada (igual a la app)
-                      const secondaryOptionsMap = {
-                        1: [
-                          "Transferencia", "Vanizado", "Reviente LC", "Succion", "Reviente L180",
-                          "Huecos y rotos", "Aguja", "Selectores", "Motores MPP", "Cuchillas", "Otros"
-                        ],
-                        2: [
-                          "Materia prima", "Motores"
-                        ],
-                        3: [
-                          "Valvulas", "Motores MPP", "No enciende", "Turbina", "Motor principal",
-                          "Paros", "Sin programa", "Fusible", "Otros"
-                        ],
-                        4: [],
-                        5: [
-                          "Transferencia", "Vanizado", "Reviente LC", "Succion", "Reviente L180",
-                          "Huecos y rotos", "Aguja", "Selectores", "Motores MPP", "Cuchillas",
-                          "Valvulas", "Motores MPP", "No enciende", "Turbina", "Motor principal",
-                          "Paros", "Sin programa", "Fusible", "Materia prima", "Motores", "Otros"
-                        ]
-                      };
-                      const mainLabels = {
-                        1: "Mecánico",
-                        2: "Barrado",
-                        3: "Electrónico",
-                        4: "Producción",
-                        5: "Seguimiento",
-                        6: "Tallaje"
-                      };
-                      const html = `
+                allSnapshots.length === 0 ? (
+                  <div>No hay snapshots guardados.</div>
+                ) : (
+                  <div style={{ maxHeight: 500, overflowY: 'auto' }}>
+                    <button
+                      className="btn btn-primary mb-3"
+                      onClick={() => {
+                        // Renderiza la app con la información guardada (igual a la app)
+                        const secondaryOptionsMap = {
+                          1: [
+                            "Transferencia", "Vanizado", "Reviente LC", "Succion", "Reviente L180",
+                            "Huecos y rotos", "Aguja", "Selectores", "Motores MPP", "Cuchillas", "Otros"
+                          ],
+                          2: [
+                            "Materia prima", "Motores"
+                          ],
+                          3: [
+                            "Valvulas", "Motores MPP", "No enciende", "Turbina", "Motor principal",
+                            "Paros", "Sin programa", "Fusible", "Otros"
+                          ],
+                          4: [],
+                          5: [
+                            "Transferencia", "Vanizado", "Reviente LC", "Succion", "Reviente L180",
+                            "Huecos y rotos", "Aguja", "Selectores", "Motores MPP", "Cuchillas",
+                            "Valvulas", "Motores MPP", "No enciende", "Turbina", "Motor principal",
+                            "Paros", "Sin programa", "Fusible", "Materia prima", "Motores", "Otros"
+                          ]
+                        };
+                        const mainLabels = {
+                          1: "Mecánico",
+                          2: "Barrado",
+                          3: "Electrónico",
+                          4: "Producción",
+                          5: "Seguimiento",
+                          6: "Tallaje"
+                        };
+                        const html = `
                         <html>
                         <head>
                           <title>Visualización gráfica de snapshots</title>
@@ -2326,15 +2613,15 @@ function App() {
                               <h3>${key}</h3>
                               <div class="img-grid">
                                 ${Object.entries(value).map(([id, state]) => {
-                        // Usa la imagen guardada en src, si no existe usa dummy
-                        let src = state.src || "https://dummyimage.com/90x90/ccc/fff&text=" + id;
-                        let mainLabel = mainLabels[state.main] || "";
-                        let secondaryLabel = "";
-                        if (typeof state === "object" && state.secondary != null && state.main != null && state.main !== 4) {
-                          const opts = secondaryOptionsMap[state.main] || [];
-                          secondaryLabel = opts[state.secondary] || "";
-                        }
-                        return `
+                          // Usa la imagen guardada en src, si no existe usa dummy
+                          let src = state.src || "https://dummyimage.com/90x90/ccc/fff&text=" + id;
+                          let mainLabel = mainLabels[state.main] || "";
+                          let secondaryLabel = "";
+                          if (typeof state === "object" && state.secondary != null && state.main != null && state.main !== 4) {
+                            const opts = secondaryOptionsMap[state.main] || [];
+                            secondaryLabel = opts[state.secondary] || "";
+                          }
+                          return `
                                     <div class="img-col">
                                       <img src="${src}" alt="${id}" title="${id}" />
                                       <div class="img-label"><b>${id}</b></div>
@@ -2342,84 +2629,237 @@ function App() {
                                       <div class="secondary-label">${secondaryLabel}</div>
                                     </div>
                                   `;
-                      }).join('')}
+                        }).join('')}
                               </div>
                             </div>
                           `).join('')}
                         </body>
                         </html>
                       `;
-                      const win = window.open();
-                      win.document.write(html);
-                      win.document.title = "Visualización gráfica de snapshots";
-                    }}
-                  >
-                    Ver todos en otra pestaña
-                  </button>
-                  {allSnapshots.map(({ key, value, info }) => {
-                    // Formatea la fecha a dd/mm/aa hh:mm
-                    let fecha = "";
-                    const match = key.match(/^(\d{4})(\d{2})(\d{2})_(\d{2})(\d{2})/);
-                    if (match) {
-                      const [/*_*/, y, m, d, h, min] = match;
-                      fecha = `${d}/${m}/${y.slice(2)} ${h}:${min}`;
-                    }
-                    // Usa solo la fecha/hora de info.fecha si existe, si no la del key
-                    let fechaMostrar = info.fecha
-                      ? new Date(info.fecha).toLocaleString()
-                      : fecha;
-                    return (
-                      <div key={key} style={{ marginBottom: 18 }}>
-                        <div style={{ fontSize: 15, color: "#000", marginBottom: 8 }}>
-                          {fechaMostrar}
-                          {info.guardadoPor && (
-                            <> &nbsp;|&nbsp; <b>{info.guardadoPor}</b></>
-                          )}
+                        const win = window.open();
+                        win.document.write(html);
+                        win.document.title = "Visualización gráfica de snapshots";
+                      }}
+                    >
+                      Ver todos en otra pestaña
+                    </button>
+                    {allSnapshots.map(({ key, value, info }) => {
+                      // Formatea la fecha a dd/mm/aa hh:mm
+                      let fecha = "";
+                      const match = key.match(/^(\d{4})(\d{2})(\d{2})_(\d{2})(\d{2})/);
+                      if (match) {
+                        const [/*_*/, y, m, d, h, min] = match;
+                        fecha = `${d}/${m}/${y.slice(2)} ${h}:${min}`;
+                      }
+                      // Usa solo la fecha/hora de info.fecha si existe, si no la del key
+                      let fechaMostrar = info.fecha
+                        ? new Date(info.fecha).toLocaleString()
+                        : fecha;
+                      const mainLabels = {
+                        1: "Mecánico",
+                        2: "Barrado",
+                        3: "Electrónico",
+                        4: "Producción",
+                        5: "Seguimiento",
+                        6: "Tallaje"
+                      };
+
+
+                      return (
+                        <div key={key} style={{ marginBottom: 18 }}>
+                          <div style={{ fontSize: 15, color: "#000", marginBottom: 8 }}>
+                            {fechaMostrar}
+                            {info.guardadoPor && (
+                              <> &nbsp;|&nbsp; <b>{info.guardadoPor}</b></>
+                            )}
+                            {/* Botón para ver bitácora */}
+                            {info.bitacoraEstados && Object.keys(info.bitacoraEstados).length > 0 && (
+                              <button
+                                className="btn btn-outline-primary btn-sm ms-2"
+                                style={{ fontSize: 13, padding: "2px 10px" }}
+                                onClick={() => {
+                                  // Mostrar modal con la bitácora gráfica
+                                  const modalDiv = document.createElement('div');
+                                  modalDiv.style.position = 'fixed';
+                                  modalDiv.style.top = 0;
+                                  modalDiv.style.left = 0;
+                                  modalDiv.style.width = '100vw';
+                                  modalDiv.style.height = '100vh';
+                                  modalDiv.style.background = 'rgba(0,0,0,0.3)';
+                                  modalDiv.style.display = 'flex';
+                                  modalDiv.style.alignItems = 'center';
+                                  modalDiv.style.justifyContent = 'center';
+                                  modalDiv.style.zIndex = 999999;
+
+                                  const inner = document.createElement('div');
+                                  inner.style.background = 'white';
+                                  inner.style.padding = '24px';
+                                  inner.style.borderRadius = '12px';
+                                  inner.style.textAlign = 'center';
+                                  inner.style.minWidth = '320px';
+                                  inner.style.maxWidth = '95vw';
+                                  inner.style.maxHeight = '90vh';
+                                  inner.style.overflow = 'auto';
+
+                                  const title = document.createElement('div');
+                                  title.style.fontSize = '20px';
+                                  title.style.marginBottom = '16px';
+                                  title.innerText = 'Bitácora gráfica de máquinas atendidas';
+                                  inner.appendChild(title);
+
+                                  // Render grid igual a la página principal
+                                  const grid = document.createElement('div');
+                                  grid.style.display = "grid";
+                                  grid.style.gap = "0";
+                                  grid.style.justifyItems = "center";
+                                  grid.style.gridTemplateColumns = "repeat(auto-fit, minmax(90px, 1fr))";
+                                  grid.style.maxHeight = "60vh";
+                                  grid.style.overflowY = "auto";
+                                  Object.entries(info.bitacoraEstados).forEach(([id, val]) => {
+                                    const cell = document.createElement('div');
+                                    cell.style.marginBottom = "2px";
+                                    cell.style.width = "90px";
+                                    cell.style.textAlign = "center";
+                                    // Imagen
+                                    const img = document.createElement('img');
+                                    img.width = ["S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8", "S9", "S10", "S11", "S12", "S13", "S14", "S15", "S16", "S17", "S18", "S19"].includes(id) ? 90 : 60;
+                                    img.style.borderRadius = "16px";
+                                    img.style.marginBottom = "0";
+                                    img.style.border = "2px solid #eee";
+                                    img.style.background = "#fff";
+                                    img.src = (() => {
+                                      if (!val || val.main == null) return cpd;
+                                      switch (val.main) {
+                                        case 1: return require('./assets/cpdrojo.png');
+                                        case 2: return require('./assets/cpdnegro.png');
+                                        case 3: return require('./assets/cpdamarillo.png');
+                                        case 4: return require('./assets/cpdblanco.png');
+                                        case 5: return require('./assets/cpdverde.png');
+                                        case 6: return require('./assets/cpdazul.png');
+                                        default: return cpd;
+                                      }
+                                    })();
+                                    cell.appendChild(img);
+
+                                    // ID
+                                    const idDiv = document.createElement('div');
+                                    idDiv.innerHTML = `<strong>${id}</strong>`;
+                                    cell.appendChild(idDiv);
+
+                                    // Main label primero
+                                    const mainDiv = document.createElement('div');
+                                    mainDiv.style.fontSize = "12px";
+                                    mainDiv.style.color = "#333";
+                                    mainDiv.innerText = mainLabels[val.main] || "";
+                                    cell.appendChild(mainDiv);
+
+                                    // Subopción después
+                                    let subLabel = "";
+                                    if (val && typeof val === "object" && val.secondary != null && val.main != null) {
+                                      const opts = secondaryOptionsMap[val.main] || [];
+                                      subLabel = opts[val.secondary] || "";
+                                      if (subLabel.length > 18) subLabel = subLabel.slice(0, 15) + "...";
+                                    }
+                                    const subDiv = document.createElement('div');
+                                    subDiv.style.fontSize = "13px";
+                                    subDiv.style.color = "#888";
+                                    subDiv.style.minHeight = "20px";
+                                    subDiv.style.height = "20px";
+                                    subDiv.style.display = "flex";
+                                    subDiv.style.alignItems = "center";
+                                    subDiv.style.justifyContent = "center";
+                                    subDiv.style.overflow = "hidden";
+                                    subDiv.style.textOverflow = "ellipsis";
+                                    subDiv.style.whiteSpace = "nowrap";
+                                    subDiv.style.width = "100%";
+                                    subDiv.style.borderRadius = "12px";
+                                    subDiv.innerText = subLabel || "\u00A0";
+                                    cell.appendChild(subDiv);
+
+                                    grid.appendChild(cell);
+                                  });
+
+                                  inner.appendChild(grid);
+
+                                  const btnCerrar = document.createElement('button');
+                                  btnCerrar.innerText = "Cerrar";
+                                  btnCerrar.className = "btn btn-secondary mt-3";
+                                  btnCerrar.style.fontSize = "16px";
+                                  btnCerrar.onclick = () => {
+                                    document.body.removeChild(modalDiv);
+                                  };
+                                  inner.appendChild(btnCerrar);
+
+                                  modalDiv.appendChild(inner);
+                                  document.body.appendChild(modalDiv);
+                                }}
+                              >Ver bitácora</button>
+                            )}
+                          </div>
+                          <div style={{ display: "flex", flexWrap: "wrap", gap: 20 }}>
+                            {Object.entries(value).map(([id, state]) => {
+                              // Usa la imagen guardada en src, si no existe usa dummy
+                              let src = state.src || "https://dummyimage.com/105x105/ccc/fff&text=" + id;
+                              let mainLabel = mainLabels[state.main] || "";
+                              let secondaryLabel = "";
+                              if (typeof state === "object" && state.secondary != null && state.main != null && state.main !== 4) {
+                                const opts = secondaryOptionsMap[state.main] || [];
+                                secondaryLabel = opts[state.secondary] || "";
+                              }
+                              return (
+                                <div key={id} style={{
+                                  display: "flex", flexDirection: "column", alignItems: "center", margin: 10, width: 105
+                                }}>
+                                  <img
+                                    src={state.src || "https://dummyimage.com/105x105/ccc/fff&text=" + id}
+                                    alt={id}
+                                    title={id}
+                                    style={{
+                                      borderRadius: 16,
+                                      border: "2px solid #888",
+                                      width: 95,
+                                      height: 95,
+                                      objectFit: "contain"
+                                    }}
+                                  />
+                                  <div style={{ fontSize: 14, color: "#555", marginTop: 2 }}><b>{id}</b></div>
+                                  {/* Main label primero */}
+                                  <div style={{ fontSize: 13, fontWeight: "bold", color: "#222" }}>{mainLabel}</div>
+                                  {/* Subopción después */}
+                                  <div style={{ fontSize: 12, color: "#007bff" }}>
+                                    {(state.main && state.secondary != null && secondaryOptionsMap[state.main])
+                                      ? secondaryOptionsMap[state.main][state.secondary] || ""
+                                      : ""}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
                         </div>
-                        <div style={{ display: "flex", flexWrap: "wrap", gap: 18 }}>
-                          {Object.entries(value).map(([id, state]) => {
-                            let src = state.src || "https://dummyimage.com/90x90/ccc/fff&text=" + id;
-                            let mainLabels = {
-                              1: "Mecánico",
-                              2: "Barrado",
-                              3: "Electrónico",
-                              4: "Producción",
-                              5: "Seguimiento",
-                              6: "Tallaje"
-                            };
-                            // Usa secondaryOptionsMap directamente
-                            let mainLabel = mainLabels[state.main] || "";
-                            let secondaryLabel = "";
-                            if (typeof state === "object" && state.secondary != null && state.main != null && state.main !== 4) {
-                              const opts = secondaryOptionsMap[state.main] || [];
-                              secondaryLabel = opts[state.secondary] || "";
-                            }
-                            return (
-                              <div key={id} style={{
-                                display: "flex", flexDirection: "column", alignItems: "center", margin: 8, width: 90
-                              }}>
-                                <img src={src} alt={id} title={id} style={{
-                                  borderRadius: 12, border: "2px solid #888", width: 90, height: 90, objectFit: "contain"
-                                }} />
-                                <div style={{ fontSize: 13, color: "#555", marginTop: 2 }}><b>{id}</b></div>
-                                <div style={{ fontSize: 13, fontWeight: "bold", color: "#222" }}>{mainLabel}</div>
-                                <div style={{ fontSize: 12, color: "#007bff" }}>{secondaryLabel}</div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )
-            )}
-            <button className="btn btn-secondary" onClick={() => setShowAllSnapshots(false)}>Cerrar</button>
+                      );
+                    })}
+                  </div >
+                )
+              )}
+              {/* Botón cerrar modal visible abajo */}
+              <div style={{ textAlign: "center", marginTop: 24 }}>
+                <button
+                  className="btn btn-danger"
+                  style={{ fontSize: 18, padding: "8px 32px" }}
+                  onClick={() => setShowAllSnapshots(false)}
+                >
+                  Cerrar
+                </button>
+              </div>
+            </div>
           </div>
-        </div>
-      )}
+        )
+      }
     </div >
   );
 }
 
+
+
 export default App;
+
