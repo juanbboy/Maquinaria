@@ -69,7 +69,9 @@ function App() {
     if (!imgStates || Object.keys(imgStates).length === 0) {
       return;
     }
-    set(dbRef, imgStates);
+    // --- LIMPIEZA: Elimina claves con undefined para evitar error de Firebase ---
+    const cleanImgStates = removeUndefined(imgStates);
+    set(dbRef, cleanImgStates);
   }, [imgStates]);
 
   // --- Elimina cualquier sincronización con localStorage para el estado actual ---
@@ -608,7 +610,19 @@ function App() {
       if (!result) return;
       const nombre = typeof result === "string" ? result : result.nombre;
       const bitacora = typeof result === "string" ? [] : result.bitacora || [];
-      const bitacoraEstados = typeof result === "string" ? {} : result.bitacoraEstados || {};
+      let bitacoraEstados = typeof result === "string" ? {} : result.bitacoraEstados || {};
+
+      // --- LIMPIEZA: Elimina claves con undefined para evitar error de Firebase ---
+      Object.keys(bitacoraEstados).forEach(id => {
+        if (bitacoraEstados[id] && typeof bitacoraEstados[id] === "object") {
+          Object.keys(bitacoraEstados[id]).forEach(k => {
+            if (bitacoraEstados[id][k] === undefined) {
+              delete bitacoraEstados[id][k];
+            }
+          });
+        }
+      });
+
       // Guarda solo los estados que NO son de producción (main !== 4)
       const snapshot = {};
       Object.entries(imgStates).forEach(([id, val]) => {
@@ -633,7 +647,7 @@ function App() {
         guardadoPor: nombre,
         fecha: now.toISOString(),
         bitacora: bitacora,
-        bitacoraEstados: bitacoraEstados
+        bitacoraEstados: bitacoraEstados // <-- ya limpio
       });
       alert('Estado guardado correctamente por ' + nombre + '.');
       // Enviar notificación FCM de entrega de turno
@@ -2914,6 +2928,22 @@ function App() {
 }
 
 
+
+// Utilidad para limpiar undefined de un objeto recursivamente
+function removeUndefined(obj) {
+  if (Array.isArray(obj)) {
+    return obj.map(removeUndefined);
+  } else if (obj && typeof obj === "object") {
+    const clean = {};
+    Object.keys(obj).forEach(k => {
+      if (obj[k] !== undefined) {
+        clean[k] = removeUndefined(obj[k]);
+      }
+    });
+    return clean;
+  }
+  return obj;
+}
 
 export default App;
 
