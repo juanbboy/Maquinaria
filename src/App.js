@@ -9,7 +9,7 @@ import { getDatabase, ref, set, onValue, off } from "firebase/database";
 // --- Firebase Cloud Messaging (FCM) ---
 import { getMessaging, getToken, onMessage } from "firebase/messaging";
 
-// Configuración de tu proyecto Firebase usando variables de entorno
+// Configuración de tu proyecto Firebase usando variables de entorno (.env)
 const firebaseConfig = {
   apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
   authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN,
@@ -18,14 +18,15 @@ const firebaseConfig = {
   messagingSenderId: process.env.REACT_APP_FIREBASE_MESSAGING_SENDER_ID,
   appId: process.env.REACT_APP_FIREBASE_APP_ID,
   measurementId: process.env.REACT_APP_FIREBASE_MEASUREMENT_ID,
-  databaseURL: process.env.REACT_APP_FIREBASE_DATABASE_URL // <--- Corrige aquí, usa REACT_APP_FIREBASE_DATABASE_URL
+  databaseURL: process.env.REACT_APP_FIREBASE_DATABASE_URL // URL de la base de datos Realtime
 };
 
+// Inicializa la app de Firebase y la referencia a la base de datos
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const dbRef = ref(db, "imgStates");
 
-// --- FCM: Inicializa y solicita permiso para notificaciones push ---
+// Inicializa FCM (notificaciones push) si es posible
 let messaging;
 if (typeof window !== "undefined" && "serviceWorker" in navigator) {
   try {
@@ -36,27 +37,27 @@ if (typeof window !== "undefined" && "serviceWorker" in navigator) {
 }
 
 function App() {
-  // --- Cargar estado inicial SOLO desde Firebase ---
+  // Estado principal de las máquinas (sincronizado con Firebase)
   const [imgStates, setImgStates] = useState({});
-  const isFirstLoad = useRef(true);
-  const ignoreNext = useRef(false);
+  const isFirstLoad = useRef(true); // Para evitar sobrescribir al cargar por primera vez
+  const ignoreNext = useRef(false); // Para evitar bucles de sincronización
 
   // --- SINCRONIZACIÓN EN TIEMPO REAL ENTRE TODOS LOS DISPOSITIVOS ---
   useEffect(() => {
+    // Escucha cambios en la base de datos y actualiza el estado local
     const handler = onValue(dbRef, (snapshot) => {
       const remote = snapshot.val();
       if (remote && typeof remote === "object" && Object.keys(remote).length > 0) {
         ignoreNext.current = true;
         setImgStates(remote);
       }
-      // Si el remoto está vacío, deja el estado vacío
       isFirstLoad.current = false;
     });
     return () => off(dbRef, "value", handler);
   }, []);
 
   useEffect(() => {
-    // Solo sube a Firebase si el cambio es local (no cuando viene de Firebase)
+    // Sube los cambios locales a Firebase (evita subir si el cambio viene de Firebase)
     if (isFirstLoad.current) {
       isFirstLoad.current = false;
       return;
@@ -65,20 +66,16 @@ function App() {
       ignoreNext.current = false;
       return;
     }
-    // No subas el estado si está vacío (evita sobreescribir el remoto en dispositivos nuevos o al refrescar)
     if (!imgStates || Object.keys(imgStates).length === 0) {
       return;
     }
-    // --- LIMPIEZA: Elimina claves con undefined para evitar error de Firebase ---
+    // Limpia claves undefined antes de subir a Firebase
     const cleanImgStates = removeUndefined(imgStates);
     set(dbRef, cleanImgStates);
   }, [imgStates]);
 
-  // --- Elimina cualquier sincronización con localStorage para el estado actual ---
-  // (No uses localStorage para el estado actual, solo para snapshots si lo deseas)
-
   // --- NOTIFICACIONES WEB (COMPATIBILIDAD MÓVIL, INCLUYENDO IPHONE) ---
-  // Solicita permiso para notificaciones push (debe ser por interacción del usuario en móviles)
+  // Solicita permiso para notificaciones push
   function requestNotificationPermission() {
     if ("Notification" in window && Notification.permission !== "granted") {
       Notification.requestPermission().then(permission => {
@@ -95,36 +92,34 @@ function App() {
     }
   }
 
-  // --- iPhone/iOS: Mensaje de compatibilidad ---
+  // --- iPhone/iOS: Mensaje de compatibilidad para notificaciones ---
   useEffect(() => {
     const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
     if (isIOS) {
-      // iOS Safari no soporta FCM ni notificaciones push web estándar (a junio 2024)
-      // Solo soporta notificaciones push si se instala como PWA (agregada a pantalla de inicio) y con iOS 16.4+
+      // Solo soporta notificaciones si es PWA instalada y iOS >= 16.4
       if (!window.matchMedia('(display-mode: standalone)').matches) {
         alert("Para recibir notificaciones en iPhone, abre esta página en Safari, pulsa 'Compartir' y selecciona 'Agregar a pantalla de inicio'. Luego abre la app desde el icono en tu pantalla de inicio.");
       }
     }
   }, []);
 
-  // Botón para pedir permiso explícitamente (necesario en móviles)
+  // Estado para saber si ya se pidió permiso de notificaciones
   const [notifAsked, setNotifAsked] = useState(false);
   const handleAskNotif = () => {
     requestNotificationPermission();
     setNotifAsked(true);
   };
 
-  // Guarda el token FCM del usuario (puedes guardarlo en el estado o en localStorage)
+  // Estado para guardar el token de FCM del usuario
   const [fcmToken, setFcmToken] = useState(null);
 
-  // Envía notificación FCM al cambiar el estado (solo si hay token y no es cambio FCM)
-  // Solo envía una notificación por acción del usuario, no por cada sincronización
+  // Envía notificación FCM al backend cuando hay un cambio relevante
   const fcmSendNotification = React.useCallback(
     (() => {
       let lastSent = { key: null, ts: 0 };
       return async (title, body, changedKey) => {
         if (!fcmToken) return;
-        // Evita enviar notificaciones duplicadas para el mismo cambio en un corto periodo
+        // Evita notificaciones duplicadas en corto tiempo
         const now = Date.now();
         if (lastSent.key === changedKey && now - lastSent.ts < 2000) return;
         lastSent = { key: changedKey, ts: now };
@@ -142,19 +137,12 @@ function App() {
     [fcmToken]
   );
 
-  // Solo muestra la notificación una vez por mensaje recibido
-  const lastPayloadId = useRef(null);
-  const lastPayloadTime = useRef(0);
-
+  // --- Manejo de mensajes FCM recibidos en primer plano ---
   useEffect(() => {
     if (!messaging) return;
-
-    // Escucha mensajes cuando la app está en primer plano
     onMessage(messaging, (payload) => {
-      // ...puedes manejar lógica de UI aquí si quieres...
-      // No mostrar notificación aquí, FCM ya la muestra si corresponde
+      // Aquí podrías mostrar una notificación personalizada si lo deseas
     });
-
     // Evita notificaciones duplicadas en segundo plano (móvil)
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.ready.then((registration) => {
@@ -165,10 +153,7 @@ function App() {
     }
   }, [messaging]);
 
-  // --- Sincronización del estado actual entre dispositivos usando localStorage events ---
-
-  // Almacena el estado actual en localStorage (ya existe en useEffect)
-  // Escucha cambios de localStorage para sincronizar entre pestañas/dispositivos
+  // --- Sincronización entre pestañas usando localStorage events ---
   useEffect(() => {
     function handleStorage(e) {
       if (e.key === 'imgStates' && e.newValue) {
@@ -182,17 +167,13 @@ function App() {
     return () => window.removeEventListener('storage', handleStorage);
   }, []);
 
-  // FCM: Solicita permiso y obtiene el token
+  // --- Obtiene el token de FCM y lo guarda en la base de datos ---
   useEffect(() => {
     if (!messaging) return;
-
-    // iOS/Safari: FCM solo funciona si es PWA instalada y iOS >= 16.4
     const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
     if (isIOS && !window.matchMedia('(display-mode: standalone)').matches) {
-      // No intentes obtener token si no es PWA en iOS
       return;
     }
-
     navigator.serviceWorker
       .getRegistration('/firebase-messaging-sw.js')
       .then((registration) => {
@@ -202,7 +183,6 @@ function App() {
         return registration;
       })
       .then((registration) => {
-        // Usa messaging.getToken en el contexto correcto
         getToken(messaging, {
           vapidKey: process.env.REACT_APP_FIREBASE_VAPID_KEY,
           serviceWorkerRegistration: registration,
@@ -210,14 +190,11 @@ function App() {
           .then((currentToken) => {
             if (currentToken) {
               setFcmToken(currentToken);
-              console.log("FCM Token:", currentToken);
-              // Guarda el token en la base de datos (si no existe)
+              // Guarda el token en la base de datos para poder enviar notificaciones a este usuario
               set(ref(db, `fcmTokens/${currentToken}`), {
                 registeredAt: Date.now(),
                 userAgent: navigator.userAgent
               });
-            } else {
-              console.log("No registration token available. ¿Permiso denegado?");
             }
           })
           .catch((err) => {
@@ -226,13 +203,10 @@ function App() {
       });
   }, [messaging]);
 
-  // Elimina imports y variables no usados
-  // cpdrojo, cpdnegro, cpdamarillo, cpdverde, imgRefs no usados
-
-  // --- Opciones y helpers necesarios para la UI ---
+  // --- Opciones principales para los estados de las máquinas ---
   const [modal, setModal] = useState({ show: false, target: null, main: null });
 
-  // Opciones principales centralizadas
+  // Opciones principales (colores y etiquetas)
   const mainOptions = [
     { label: "Mecánico", main: 1, className: "btn btn-danger" },
     { label: "Barrado", main: 2, className: "btn btn-dark" },
@@ -242,7 +216,7 @@ function App() {
     { label: "Producción", main: 4, className: "btn btn-light" }
   ];
 
-  // Subopciones centralizadas (solo una definición, usar siempre esta)
+  // Opciones secundarias (subopciones por cada tipo principal)
   const secondaryOptionsMap = React.useMemo(() => ({
     1: [
       "Transferencia", "Vanizado", "Reviente LC", "Succion", "Reviente L180", "Piques",
@@ -267,17 +241,17 @@ function App() {
     ]
   }), []);
 
-  // Asegúrate de que handleSaveSnapshotNow esté definido dentro de App
+  // --- Guardar snapshot del estado de las máquinas (entrega de turno) ---
   const handleSaveSnapshotNow = async () => {
+    // Lista de nombres para seleccionar quién guarda el estado
     const nombres = ["F. Riobo", "N. Castañeda", "M. Gomez", "J. Bobadilla", "J. Salazar"];
     let step = 1;
     let nombreSeleccionado = null;
     let bitacoraEstados = {};
-    let maquinasSeleccionadas = [];
-    let lastScrollTop = 0; // <-- persistente entre renders
+    let lastScrollTop = 0; // Guarda la posición del scroll en la bitácora
 
     return new Promise((resolve) => {
-      // Paso 1: pedir nombre
+      // Modal principal para la bitácora
       const modalDiv = document.createElement('div');
       modalDiv.style.position = 'fixed';
       modalDiv.style.top = 0;
@@ -297,9 +271,11 @@ function App() {
       inner.style.textAlign = 'center';
       inner.style.minWidth = '260px';
 
+      // Renderiza el paso actual del modal (selección de nombre o bitácora)
       const renderStep = () => {
         inner.innerHTML = '';
         if (step === 1) {
+          // Paso 1: Selección de nombre
           const title = document.createElement('div');
           title.style.fontSize = '22px';
           title.style.marginBottom = '18px';
@@ -320,7 +296,7 @@ function App() {
             inner.appendChild(btn);
           });
 
-          // Botón "Otro"
+          // Botón "Otro" para ingresar nombre personalizado
           const otroBtn = document.createElement('button');
           otroBtn.innerText = 'Otro...';
           otroBtn.className = 'btn btn-outline-secondary m-2';
@@ -336,12 +312,12 @@ function App() {
           };
           inner.appendChild(otroBtn);
 
-          // Espaciado para separar los botones de nombre del botón cerrar
+          // Espaciado visual
           const spacer = document.createElement('div');
           spacer.style.height = '24px';
           inner.appendChild(spacer);
 
-          // Botón cerrar (siempre visible y resaltado)
+          // Botón para cerrar el modal
           const btnCerrar = document.createElement('button');
           btnCerrar.innerText = 'Cerrar';
           btnCerrar.className = 'btn btn-secondary mt-2';
@@ -353,29 +329,29 @@ function App() {
           };
           inner.appendChild(btnCerrar);
         } else if (step === 2) {
-          // Bitácora: Render gráfico igual a la página principal
+          // Paso 2: Bitácora gráfica de máquinas
           const title = document.createElement('div');
           title.style.fontSize = '22px';
           title.style.marginBottom = '18px';
           title.innerText = 'Bitácora del día: selecciona el estado de cada máquina atendida';
           inner.appendChild(title);
 
-          // Lista de máquinas
+          // Lista de máquinas a mostrar
           const maquinas = [
             "S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8", "S9", "S10", "S11", "S12", "S13", "S14", "S15", "S16", "S17", "S18", "S19",
             "26", "28", "30", "31", "32", "33", "34", "35", "36", "38", "39", "40", "43", "44", "45", "46", "47", "48", "49", "50", "51", "52", "53", "54", "55", "56", "57", "58", "64", "65", "66", "67", "69", "70", "71", "72", "73", "74", "75", "76"
           ];
 
-          // Contenedor con scroll
+          // Contenedor con scroll para la bitácora
           const scrollContainer = document.createElement('div');
           scrollContainer.style.maxHeight = '60vh';
           scrollContainer.style.overflowY = 'auto';
           scrollContainer.style.marginBottom = '18px';
 
-          // Restaurar scroll después de renderizar el grid
+          // Restaura la posición del scroll después de renderizar el grid
           setTimeout(() => { scrollContainer.scrollTop = lastScrollTop; }, 0);
 
-          // Render grid igual a la página principal
+          // Grid de máquinas
           const grid = document.createElement('div');
           grid.style.display = "grid";
           grid.style.gap = "0";
@@ -384,12 +360,13 @@ function App() {
           grid.style.marginBottom = "18px";
 
           maquinas.forEach(id => {
+            // Celda de cada máquina
             const cell = document.createElement('div');
             cell.style.marginBottom = "2px";
             cell.style.width = "90px";
             cell.style.textAlign = "center";
 
-            // Imagen
+            // Imagen de la máquina (input tipo image)
             const input = document.createElement('input');
             input.type = "image";
             input.width = ["S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8", "S9", "S10", "S11", "S12", "S13", "S14", "S15", "S16", "S17", "S18", "S19"].includes(id) ? 90 : 60;
@@ -398,7 +375,7 @@ function App() {
             input.style.border = "2px solid #eee";
             input.style.background = "#fff";
             input.setAttribute("data-id", id);
-            // Usa getSrc para mostrar el estado seleccionado, si no, blanco
+            // Selecciona la imagen según el estado
             input.src = (() => {
               const val = bitacoraEstados[id];
               if (!val || val.main == null) return cpd;
@@ -412,11 +389,11 @@ function App() {
                 default: return cpd;
               }
             })();
+            // Al hacer click en la imagen, abre el modal de opciones
             input.onclick = (event) => {
               lastScrollTop = scrollContainer.scrollTop; // Guarda la posición antes de abrir modal
-              // Modal para seleccionar opción y subopción igual que en la app principal
+              // Modal para seleccionar opción principal
               const id = event.target.getAttribute('data-id');
-              // Modal simple para seleccionar opción principal
               const modalOpc = document.createElement('div');
               modalOpc.style.position = 'fixed';
               modalOpc.style.top = 0;
@@ -442,6 +419,7 @@ function App() {
               titleOpc.innerText = `Máquina ${id}: Selecciona opción`;
               innerOpc.appendChild(titleOpc);
 
+              // Botones de opciones principales
               mainOptions.forEach(opt => {
                 const btn = document.createElement('button');
                 btn.innerText = opt.label;
@@ -454,9 +432,8 @@ function App() {
                   bitacoraEstados[id].main = opt.main;
                   bitacoraEstados[id].secondary = null;
                   document.body.removeChild(modalOpc);
-                  // Si no es producción, pedir subopción
+                  // Si requiere subopción, abre modal de subopciones
                   if (opt.main !== 4 && secondaryOptionsMap[opt.main] && secondaryOptionsMap[opt.main].length > 0) {
-                    // Modal subopción
                     const modalSub = document.createElement('div');
                     modalSub.style.position = 'fixed';
                     modalSub.style.top = 0;
@@ -482,6 +459,7 @@ function App() {
                     titleSub.innerText = `Máquina ${id}: Selecciona subopción`;
                     innerSub.appendChild(titleSub);
 
+                    // Botones de subopciones
                     secondaryOptionsMap[opt.main].forEach((sub, idx) => {
                       if (sub === "Otros") {
                         const btnSub = document.createElement('button');
@@ -517,6 +495,7 @@ function App() {
                       }
                     });
 
+                    // Botón cancelar subopción
                     const btnCancel = document.createElement('button');
                     btnCancel.innerText = "Cancelar";
                     btnCancel.className = "btn btn-link mt-3";
@@ -537,6 +516,7 @@ function App() {
                 innerOpc.appendChild(btn);
               });
 
+              // Botón cancelar opción principal
               const btnCancel = document.createElement('button');
               btnCancel.innerText = "Cancelar";
               btnCancel.className = "btn btn-link mt-3";
@@ -553,12 +533,12 @@ function App() {
 
             cell.appendChild(input);
 
-            // ID
+            // Muestra el ID de la máquina
             const idDiv = document.createElement('div');
             idDiv.innerHTML = `<strong>${id}</strong>`;
             cell.appendChild(idDiv);
 
-            // Etiqueta subopción
+            // Etiqueta de subopción seleccionada
             const val = bitacoraEstados[id];
             let subLabel = "";
             if (val && typeof val === "object" && val.secondary != null && val.main != null) {
@@ -592,6 +572,7 @@ function App() {
           scrollContainer.appendChild(grid);
           inner.appendChild(scrollContainer);
 
+          // Botón para guardar el estado de la bitácora
           const btnGuardar = document.createElement('button');
           btnGuardar.innerText = 'Guardar estado';
           btnGuardar.className = 'btn btn-success m-2';
@@ -605,6 +586,7 @@ function App() {
           };
           inner.appendChild(btnGuardar);
 
+          // Botón para volver al paso anterior (selección de nombre)
           const btnAtras = document.createElement('button');
           btnAtras.innerText = 'Volver';
           btnAtras.className = 'btn btn-link mt-3';
@@ -626,7 +608,7 @@ function App() {
       const bitacora = typeof result === "string" ? [] : result.bitacora || [];
       let bitacoraEstados = typeof result === "string" ? {} : result.bitacoraEstados || {};
 
-      // --- LIMPIEZA: Elimina claves con undefined para evitar error de Firebase ---
+      // Limpia claves undefined antes de guardar en Firebase
       Object.keys(bitacoraEstados).forEach(id => {
         if (bitacoraEstados[id] && typeof bitacoraEstados[id] === "object") {
           Object.keys(bitacoraEstados[id]).forEach(k => {
@@ -648,11 +630,11 @@ function App() {
           };
         }
       });
-      // Si no hay ningún estado para guardar, muestra aviso y no guarda
       if (Object.keys(snapshot).length === 0) {
         alert('No hay estados fuera de producción para guardar.');
         return;
       }
+      // Genera clave única para el snapshot
       const now = new Date();
       const pad = n => n.toString().padStart(2, '0');
       const key = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
@@ -661,53 +643,49 @@ function App() {
         guardadoPor: nombre,
         fecha: now.toISOString(),
         bitacora: bitacora,
-        bitacoraEstados: bitacoraEstados // <-- ya limpio
+        bitacoraEstados: bitacoraEstados
       });
       alert('Estado guardado correctamente por ' + nombre + '.');
-      // Enviar notificación FCM de entrega de turno
+      // Envía notificación de entrega de turno
       fcmSendNotification(
         "Entrega de turno registrada",
+        `Entrega-turno-${nombre}-${Date.now()}`,
         `Entrega de turno registrada por ${nombre}`,
-        `entrega-turno-${nombre}-${Date.now()}`
+
       );
     });
   };
 
-  // Helpers para UI
+  // --- Helpers para UI y lógica de la app ---
+
+  // Devuelve una función para referenciar inputs de imagen (no usado aquí)
   function setImgRef(id) {
     return (el) => {
       // opcional: puedes guardar refs si los necesitas
     };
   }
 
+  // Abre el modal de opciones para una máquina
   function img(event) {
-    // Lógica para abrir el modal, debes tener esta función definida
     setModal({ show: true, target: event.target, main: null });
   }
 
+  // Devuelve la imagen correspondiente al estado de la máquina
   function getSrc(id) {
-    // Lógica para obtener el src de la imagen según el estado
     const val = imgStates[id];
     if (!val || val.main == null) return cpd;
-    // Cambia el color según la opción principal (main)
     switch (val.main) {
-      case 1: // Mecánico
-        return require('./assets/cpdrojo.png');
-      case 2: // Barrado
-        return require('./assets/cpdnegro.png');
-      case 3: // Electrónico
-        return require('./assets/cpdamarillo.png');
-      case 4: // Producción
-        return require('./assets/cpdblanco.png');
-      case 5: // Seguimiento
-        return require('./assets/cpdverde.png');
-      case 6: // Tallaje (Azul)
-        return require('./assets/cpdazul.png');
-      default:
-        return cpd;
+      case 1: return require('./assets/cpdrojo.png');
+      case 2: return require('./assets/cpdnegro.png');
+      case 3: return require('./assets/cpdamarillo.png');
+      case 4: return require('./assets/cpdblanco.png');
+      case 5: return require('./assets/cpdverde.png');
+      case 6: return require('./assets/cpdazul.png');
+      default: return cpd;
     }
   }
 
+  // Devuelve la etiqueta de la subopción seleccionada para una máquina
   function getSecondaryLabel(id) {
     const val = imgStates[id];
     if (!val || typeof val !== "object" || val.secondary == null || val.main == null) {
@@ -724,6 +702,7 @@ function App() {
     return label;
   }
 
+  // Devuelve las subopciones para el modal actual
   function getSecondaryOptions() {
     if (modal.main === 4) return [];
     if (modal.main && secondaryOptionsMap[modal.main]) {
@@ -732,6 +711,7 @@ function App() {
     return [];
   }
 
+  // Maneja la selección de una opción principal en el modal
   function handleMainOption(main) {
     if (main === 4 && modal.target) {
       const id = modal.target.getAttribute('data-id');
@@ -740,7 +720,6 @@ function App() {
         ...prev,
         [id]: { src, secondary: null, main }
       }));
-      // Notificación solo si es acción local
       fcmSendNotification(
         `Máquina ${id}`,
         `Producción`,
@@ -752,7 +731,7 @@ function App() {
     setModal((prev) => ({ ...prev, main }));
   }
 
-  // Cambios para permitir subopción personalizada ("Otros")
+  // Maneja la selección de una subopción (incluye opción personalizada "Otros")
   function handleSecondaryOption(secondaryIdx, customText) {
     if (!modal.target || !modal.main) return;
     const id = modal.target.getAttribute('data-id');
@@ -766,7 +745,6 @@ function App() {
         secondaryCustom: (secondaryIdx !== undefined && getSecondaryOptions()[secondaryIdx] === "Otros") ? customText : undefined
       }
     }));
-    // Notificación solo si es acción local
     const mainLabels = {
       1: "Mecánico",
       2: "Barrado",
@@ -788,7 +766,7 @@ function App() {
     }, 0);
   }
 
-  // Snapshots helpers (deben estar definidos)
+  // --- Helpers para snapshots locales (no usados en la UI principal) ---
   // eslint-disable-next-line no-unused-vars
   const [showSnapshot, setShowSnapshot] = useState(false);
   // eslint-disable-next-line no-unused-vars
@@ -820,26 +798,24 @@ function App() {
     setShowSnapshot(false);
   }
 
-  // Estado y helpers para mostrar todos los snapshots guardados en Firebase
+  // --- Estado y helpers para mostrar todos los snapshots guardados en Firebase ---
   const [allSnapshots, setAllSnapshots] = useState([]);
   const [showAllSnapshots, setShowAllSnapshots] = useState(false);
   const [loadingSnapshots, setLoadingSnapshots] = useState(false);
 
-  // Función para obtener todos los snapshots guardados en Firebase (con info de quién lo guardó)
+  // Obtiene todos los snapshots guardados en Firebase (con info de quién lo guardó)
   const handleShowAllSnapshots = async () => {
     setLoadingSnapshots(true);
     setShowAllSnapshots(true);
     try {
       const { getDatabase, ref, get } = await import("firebase/database");
       const db = getDatabase();
-      // Lee snapshots (máquinas) y snapshotsInfo (quién lo guardó)
       const [snap, infoSnap] = await Promise.all([
         get(ref(db, "snapshots")),
         get(ref(db, "snapshotsInfo"))
       ]);
       const data = snap.exists() ? snap.val() : {};
       const infoData = infoSnap.exists() ? infoSnap.val() : {};
-      // Ordena por clave descendente (más reciente primero)
       const arr = Object.entries(data)
         .sort((a, b) => b[0].localeCompare(a[0]))
         .map(([key, value]) => ({
@@ -854,17 +830,17 @@ function App() {
     setLoadingSnapshots(false);
   };
 
+  // --- Render principal de la app ---
   return (
     <div className="App">
-      {/* Título visible en ambos: móvil y PC */}
+      {/* Título principal */}
       <h1 className="text-center p-4">
-
         <span className="d-block d-md-none" style={{ fontSize: 26 }}>Circulares Pequeño Diametro</span>
         <span className="d-none d-md-block" style={{ fontSize: 36 }}>Circulares Pequeño Diametro</span>
       </h1>
-      {/* SOLO PARA MÓVIL */}
+      {/* Grid de máquinas para móvil */}
       <div className="p-1 d-block d-md-none">
-        {/* ...existing code for mobile grid... */}
+        {/* Aquí se renderiza el grid de máquinas para móvil */}
         <div
           style={{
             display: "grid",
@@ -918,9 +894,9 @@ function App() {
           ))}
         </div>
       </div>
-      {/* SOLO PARA PC/TABLET: mostrar el grid clásico solo en desktop/tablet */}
+      {/* Grid de máquinas para PC/tablet */}
       <div className="px-4 d-none d-md-block">
-        {/* Elimina el h1 aquí, ya está arriba */}
+        {/* Aquí se renderiza el grid de máquinas para escritorio */}
         <div className="row py-4 text-center">
           <div className="col p-0 ">
             <div>
@@ -2468,7 +2444,7 @@ function App() {
           </div>
         </div>
       </div>
-      {/* Modal de opciones */}
+      {/* Modal de opciones para cambiar estado de una máquina */}
       {
         modal.show && (
           <div style={{
@@ -2578,6 +2554,7 @@ function App() {
           </div>
         )
       }
+      {/* Botones de acciones principales */}
       <div className="mb-3 text-end">
         {/* <button className="btn btn-info me-2" onClick={handleShowSnapshot}>
           Ver estados guardados del día
@@ -2595,8 +2572,6 @@ function App() {
           </button>
         )}
       </div>
-
-
       {/* Modal para mostrar todos los snapshots guardados */}
       {
         showAllSnapshots && (
@@ -2763,7 +2738,7 @@ function App() {
                                   title.innerText = 'Bitácora gráfica de máquinas atendidas';
                                   inner.appendChild(title);
 
-                                  // Render grid igual a la página principal
+                                  // Renderiza el grid de la bitácora
                                   const grid = document.createElement('div');
                                   grid.style.display = "grid";
                                   grid.style.gap = "0";
@@ -2919,9 +2894,7 @@ function App() {
   );
 }
 
-
-
-// Utilidad para limpiar undefined de un objeto recursivamente
+// --- Utilidad para limpiar undefined de un objeto recursivamente ---
 function removeUndefined(obj) {
   if (Array.isArray(obj)) {
     return obj.map(removeUndefined);
@@ -2938,4 +2911,5 @@ function removeUndefined(obj) {
 }
 
 export default App;
+
 
