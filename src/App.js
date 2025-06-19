@@ -232,7 +232,17 @@ function App() {
   // --- Opciones y helpers necesarios para la UI ---
   const [modal, setModal] = useState({ show: false, target: null, main: null });
 
-  // Define las opciones de subcausas en un solo objeto para usarlo tanto en la UI como en snapshots
+  // Opciones principales centralizadas
+  const mainOptions = [
+    { label: "Mecánico", main: 1, className: "btn btn-danger" },
+    { label: "Barrado", main: 2, className: "btn btn-dark" },
+    { label: "Electrónico", main: 3, className: "btn btn-warning" },
+    { label: "Tallaje", main: 6, className: "btn btn-primary", style: { backgroundColor: "#007bff", borderColor: "#007bff" } },
+    { label: "Seguimiento", main: 5, className: "btn btn-success" },
+    { label: "Producción", main: 4, className: "btn btn-light" }
+  ];
+
+  // Subopciones centralizadas (solo una definición, usar siempre esta)
   const secondaryOptionsMap = React.useMemo(() => ({
     1: [
       "Transferencia", "Vanizado", "Reviente LC", "Succion", "Reviente L180", "Piques",
@@ -264,6 +274,8 @@ function App() {
     let nombreSeleccionado = null;
     let bitacoraEstados = {};
     let maquinasSeleccionadas = [];
+    let lastScrollTop = 0; // <-- persistente entre renders
+
     return new Promise((resolve) => {
       // Paso 1: pedir nombre
       const modalDiv = document.createElement('div');
@@ -360,6 +372,9 @@ function App() {
           scrollContainer.style.overflowY = 'auto';
           scrollContainer.style.marginBottom = '18px';
 
+          // Restaurar scroll después de renderizar el grid
+          setTimeout(() => { scrollContainer.scrollTop = lastScrollTop; }, 0);
+
           // Render grid igual a la página principal
           const grid = document.createElement('div');
           grid.style.display = "grid";
@@ -398,6 +413,7 @@ function App() {
               }
             })();
             input.onclick = (event) => {
+              lastScrollTop = scrollContainer.scrollTop; // Guarda la posición antes de abrir modal
               // Modal para seleccionar opción y subopción igual que en la app principal
               const id = event.target.getAttribute('data-id');
               // Modal simple para seleccionar opción principal
@@ -426,14 +442,7 @@ function App() {
               titleOpc.innerText = `Máquina ${id}: Selecciona opción`;
               innerOpc.appendChild(titleOpc);
 
-              [
-                { label: "Mecánico", main: 1, className: "btn btn-danger" },
-                { label: "Barrado", main: 2, className: "btn btn-dark" },
-                { label: "Electrónico", main: 3, className: "btn btn-warning" },
-                { label: "Tallaje", main: 6, className: "btn btn-primary", style: { backgroundColor: "#007bff", borderColor: "#007bff" } },
-                { label: "Seguimiento", main: 5, className: "btn btn-success" },
-                { label: "Producción", main: 4, className: "btn btn-light" }
-              ].forEach(opt => {
+              mainOptions.forEach(opt => {
                 const btn = document.createElement('button');
                 btn.innerText = opt.label;
                 btn.className = opt.className + " m-2";
@@ -487,6 +496,7 @@ function App() {
                             bitacoraEstados[id].secondaryCustom = custom.trim();
                             document.body.removeChild(modalSub);
                             renderStep();
+                            setTimeout(() => { scrollContainer.scrollTop = lastScrollTop; }, 0);
                           }
                         };
                         innerSub.appendChild(btnSub);
@@ -501,6 +511,7 @@ function App() {
                           bitacoraEstados[id].secondaryCustom = undefined;
                           document.body.removeChild(modalSub);
                           renderStep();
+                          setTimeout(() => { scrollContainer.scrollTop = lastScrollTop; }, 0);
                         };
                         innerSub.appendChild(btnSub);
                       }
@@ -512,6 +523,7 @@ function App() {
                     btnCancel.style.fontSize = "16px";
                     btnCancel.onclick = () => {
                       document.body.removeChild(modalSub);
+                      setTimeout(() => { scrollContainer.scrollTop = lastScrollTop; }, 0);
                     };
                     innerSub.appendChild(btnCancel);
 
@@ -519,6 +531,7 @@ function App() {
                     document.body.appendChild(modalSub);
                   } else {
                     renderStep();
+                    setTimeout(() => { scrollContainer.scrollTop = lastScrollTop; }, 0);
                   }
                 };
                 innerOpc.appendChild(btn);
@@ -530,6 +543,7 @@ function App() {
               btnCancel.style.fontSize = "16px";
               btnCancel.onclick = () => {
                 document.body.removeChild(modalOpc);
+                setTimeout(() => { scrollContainer.scrollTop = lastScrollTop; }, 0);
               };
               innerOpc.appendChild(btnCancel);
 
@@ -2499,12 +2513,16 @@ function App() {
                       </div>
                     );
                   })()}
-                  <button className="btn btn-danger m-2" style={{ fontSize: 28, padding: '16px 32px' }} onClick={() => handleMainOption(1)}>Mecánico</button>
-                  <button className="btn btn-dark m-2" style={{ fontSize: 28, padding: '16px 32px' }} onClick={() => handleMainOption(2)}>Barrado</button>
-                  <button className="btn btn-warning m-2" style={{ fontSize: 28, padding: '16px 32px' }} onClick={() => handleMainOption(3)}>Electronico</button>
-                  <button className="btn btn-primary m-2" style={{ fontSize: 28, padding: '16px 32px', backgroundColor: '#007bff', borderColor: '#007bff' }} onClick={() => handleMainOption(6)}>Tallaje</button>
-                  <button className="btn btn-success m-2" style={{ fontSize: 28, padding: '16px 32px' }} onClick={() => handleMainOption(5)}>Seguimiento</button>
-                  <button className="btn btn-light m-2" style={{ fontSize: 28, padding: '16px 32px' }} onClick={() => handleMainOption(4)}>Produccion</button>
+                  {mainOptions.map(opt => (
+                    <button
+                      key={opt.main}
+                      className={opt.className + " m-2"}
+                      style={{ fontSize: 28, padding: '16px 32px', ...(opt.style || {}) }}
+                      onClick={() => handleMainOption(opt.main)}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
                   <div>
                     <button className="btn btn-link mt-3" style={{ fontSize: 20 }} onClick={() => setModal({ show: false, target: null, main: null })}>Cancelar</button>
                   </div>
@@ -2626,58 +2644,32 @@ function App() {
                       className="btn btn-primary mb-3"
                       onClick={() => {
                         // Renderiza la app con la información guardada (igual a la app)
-                        const secondaryOptionsMap = {
-                          1: [
-                            "Transferencia", "Vanizado", "Reviente LC", "Succion", "Reviente L180",
-                            "Huecos y rotos", "Aguja", "Selectores", "Motores MPP", "Cuchillas", "Otros"
-                          ],
-                          2: [
-                            "Materia prima", "Motores"
-                          ],
-                          3: [
-                            "Valvulas", "Motores MPP", "No enciende", "Turbina", "Motor principal",
-                            "Paros", "Sin programa", "Fusible", "Otros"
-                          ],
-                          4: [],
-                          5: [
-                            "Transferencia", "Vanizado", "Reviente LC", "Succion", "Reviente L180",
-                            "Huecos y rotos", "Aguja", "Selectores", "Motores MPP", "Cuchillas",
-                            "Valvulas", "Motores MPP", "No enciende", "Turbina", "Motor principal",
-                            "Paros", "Sin programa", "Fusible", "Materia prima", "Motores", "Otros"
-                          ]
-                        };
-                        const mainLabels = {
-                          1: "Mecánico",
-                          2: "Barrado",
-                          3: "Electrónico",
-                          4: "Producción",
-                          5: "Seguimiento",
-                          6: "Tallaje"
-                        };
+                        const mainLabels = {};
+                        mainOptions.forEach(opt => { mainLabels[opt.main] = opt.label; });
+                        // Usa secondaryOptionsMap directamente (el definido arriba en el componente)
                         const html = `
-                        <html>
-                        <head>
-                          <title>Visualización gráfica de snapshots</title>
-                          <style>
-                            body { font-family: Arial, sans-serif; background: #f8f9fa; margin: 0; padding: 20px; }
-                            .snap { margin-bottom: 32px; border-bottom: 1px solid #ccc; padding-bottom: 16px; }
-                            .snap h3 { color: #007bff; margin-bottom: 8px; }
-                            .img-grid { display: flex; flex-wrap: wrap; gap: 18px; }
-                            .img-col { display: flex; flex-direction: column; align-items: center; margin: 8px; width: 90px; }
-                            .img-col img { border-radius: 12px; border: 2px solid #888; width: 90px; height: 90px; object-fit: contain; }
-                            .img-label { font-size: 13px; color: #555; margin-top: 2px; }
-                            .main-label { font-size: 13px; font-weight: bold; color: #222; }
-                            .secondary-label { font-size: 12px; color: #007bff; }
-                          </style>
-                        </head>
-                        <body>
-                          <h2>Visualización gráfica de snapshots</h2>
-                          ${allSnapshots.map(({ key, value }) => `
-                            <div class="snap">
-                              <h3>${key}</h3>
-                              <div class="img-grid">
-                                ${Object.entries(value).map(([id, state]) => {
-                          // Usa la imagen guardada en src, si no existe usa dummy
+                          <html>
+                          <head>
+                            <title>Visualización gráfica de snapshots</title>
+                            <style>
+                              body { font-family: Arial, sans-serif; background: #f8f9fa; margin: 0; padding: 20px; }
+                              .snap { margin-bottom: 32px; border-bottom: 1px solid #ccc; padding-bottom: 16px; }
+                              .snap h3 { color: #007bff; margin-bottom: 8px; }
+                              .img-grid { display: flex; flex-wrap: wrap; gap: 18px; }
+                              .img-col { display: flex; flex-direction: column; align-items: center; margin: 8px; width: 90px; }
+                              .img-col img { border-radius: 12px; border: 2px solid #888; width: 90px; height: 90px; object-fit: contain; }
+                              .img-label { font-size: 13px; color: #555; margin-top: 2px; }
+                              .main-label { font-size: 13px; font-weight: bold; color: #222; }
+                              .secondary-label { font-size: 12px; color: #007bff; }
+                            </style>
+                          </head>
+                          <body>
+                            <h2>Visualización gráfica de snapshots</h2>
+                            ${allSnapshots.map(({ key, value }) => `
+                              <div class="snap">
+                                <h3>${key}</h3>
+                                <div class="img-grid">
+                                  ${Object.entries(value).map(([id, state]) => {
                           let src = state.src || "https://dummyimage.com/90x90/ccc/fff&text=" + id;
                           let mainLabel = mainLabels[state.main] || "";
                           let secondaryLabel = "";
@@ -2686,20 +2678,20 @@ function App() {
                             secondaryLabel = opts[state.secondary] || "";
                           }
                           return `
-                                    <div class="img-col">
-                                      <img src="${src}" alt="${id}" title="${id}" />
-                                      <div class="img-label"><b>${id}</b></div>
-                                      <div class="main-label">${mainLabel}</div>
-                                      <div class="secondary-label">${secondaryLabel}</div>
-                                    </div>
-                                  `;
+                                      <div class="img-col">
+                                        <img src="${src}" alt="${id}" title="${id}" />
+                                        <div class="img-label"><b>${id}</b></div>
+                                        <div class="main-label">${mainLabel}</div>
+                                        <div class="secondary-label">${secondaryLabel}</div>
+                                      </div>
+                                    `;
                         }).join('')}
+                                </div>
                               </div>
-                            </div>
-                          `).join('')}
-                        </body>
-                        </html>
-                      `;
+                            `).join('')}
+                          </body>
+                          </html>
+                        `;
                         const win = window.open();
                         win.document.write(html);
                         win.document.title = "Visualización gráfica de snapshots";
