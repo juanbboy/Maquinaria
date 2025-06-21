@@ -266,7 +266,7 @@ function App() {
 
       const inner = document.createElement('div');
       inner.style.background = 'white';
-      inner.style.padding = '10px 24px';
+      inner.style.padding = '32px 24px';
       inner.style.borderRadius = '12px';
       inner.style.textAlign = 'center';
       inner.style.minWidth = '260px';
@@ -648,10 +648,8 @@ function App() {
       alert('Estado guardado correctamente por ' + nombre + '.');
       // Envía notificación de entrega de turno
       fcmSendNotification(
-        "Entrega de turno registrada",
-        `Entrega-turno-${nombre}-${Date.now()}`,
         `Entrega de turno registrada por ${nombre}`,
-
+        `${new Date().toLocaleString('es-ES')}`,
       );
     });
   };
