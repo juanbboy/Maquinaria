@@ -686,7 +686,7 @@ function App() {
       alert('Estado guardado correctamente por ' + nombre + '.');
       // Envía notificación de entrega de turno
       fcmSendNotification(
-        `Entrega de turno registrada por ${nombre}`,
+        `Entrega de turno por ${nombre}`,
         `${new Date().toLocaleString('es-ES')}`,
       );
     });
