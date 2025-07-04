@@ -220,35 +220,36 @@ function App() {
   const secondaryOptionsMap = React.useMemo(() => ({
     1: [
       "Transferencia", "Vanizado", "Reviente LC", "Succion", "Reviente L180", "Piques",
-      "Huecos y rotos", "Aguja", "Selectores", "Motores MPP", "Cuchillas", "correa", "Manguera rota", "Lubricacion", "Guia hilos", "Otros"
+      "Huecos y rotos", "Aguja", "Selectores", "Motores MPP", "Cuchillas", "correa", "Manguera rota", "Lubricacion", "Guia hilos", "Otros", "Limpieza", "Trasdenuto", "Escaricato"
     ],
     2: [
       "Licra", "Nylon", "Motores"
     ],
     3: [
       "Valvulas", "Motores MPP", "No enciende", "Turbina", "Motor principal", "Sensores",
-      "Paros", "Sin programa", "Fusible", "Guia hilos", "Corto circuito", "Carga no conectada", "bloqueo", "Sensor Lubricacion", "Otros"
+      "Paros", "Sin programa", "Fusible", "Guia hilos", "Corto circuito", "Carga no conectada", "bloqueo", "Sensor Lubricacion", "Otros", "Motor LGL", "Trasdenuto", "Escaricato"
     ],
     4: [],
     5: [
       "Transferencia", "Vanizado", "Reviente LC", "Succion", "Reviente L180", "Piques",
       "Huecos y rotos", "Aguja", "Selectores", "Motores MPP", "Cuchillas",
       "Valvulas", "Motores MPP", "No enciende", "Turbina", "Motor principal", "Sensores",
-      "Paros", "Sin programa", "Fusible", "Materia prima", "Motores", "Sensor Lubricacion", "Lubricacion", "Guia hilos", "Otros"
+      "Paros", "Sin programa", "Fusible", "Materia prima", "Motores", "Sensor Lubricacion", "Lubricacion", "Guia hilos", "Otros", "Motor LGL", "Limpieza", "Trasdenuto", "Escaricato"
     ],
     6: [
-      "Cambio de talla", "Cambio de referencia"
+      "Cambio de talla", "Cambio de referencia", "Desprogramada"
     ]
   }), []);
 
   // --- Guardar snapshot del estado de las máquinas (entrega de turno) ---
   const handleSaveSnapshotNow = async () => {
     // Lista de nombres para seleccionar quién guarda el estado
-    const nombres = ["F. Riobo", "N. Castañeda", "M. Gomez", "J. Bobadilla", "J. Salazar"];
+    const nombres = ["F. Riobo", "N. Castañeda", "M. Gomez", "J. Bobadilla", "J. Salazar", "L. Paez"];
     let step = 1;
     let nombreSeleccionado = null;
     let bitacoraEstados = {};
     let lastScrollTop = 0; // Guarda la posición del scroll en la bitácora
+    let observacionesGenerales = ""; // Nuevo campo para observaciones
 
     return new Promise((resolve) => {
       // Modal principal para la bitácora
@@ -431,6 +432,7 @@ function App() {
                   if (!bitacoraEstados[id]) bitacoraEstados[id] = {};
                   bitacoraEstados[id].main = opt.main;
                   bitacoraEstados[id].secondary = null;
+                  bitacoraEstados[id].secondaryCustom = undefined; // <-- Asegura limpiar secondaryCustom al cambiar main
                   document.body.removeChild(modalOpc);
                   // Si requiere subopción, abre modal de subopciones
                   if (opt.main !== 4 && secondaryOptionsMap[opt.main] && secondaryOptionsMap[opt.main].length > 0) {
@@ -486,7 +488,7 @@ function App() {
                         btnSub.style.padding = "8px 18px";
                         btnSub.onclick = () => {
                           bitacoraEstados[id].secondary = idx;
-                          bitacoraEstados[id].secondaryCustom = undefined;
+                          bitacoraEstados[id].secondaryCustom = undefined; // <-- Limpia secondaryCustom si no es "Otros"
                           document.body.removeChild(modalSub);
                           renderStep();
                           setTimeout(() => { scrollContainer.scrollTop = lastScrollTop; }, 0);
@@ -572,6 +574,33 @@ function App() {
           scrollContainer.appendChild(grid);
           inner.appendChild(scrollContainer);
 
+          // --- Observaciones generales ---
+          const obsDiv = document.createElement('div');
+          obsDiv.style.margin = '18px 0 8px 0';
+          obsDiv.style.textAlign = 'left';
+
+          const obsLabel = document.createElement('label');
+          obsLabel.innerText = 'Observaciones generales:';
+          obsLabel.style.fontWeight = 'bold';
+          obsLabel.style.display = 'block';
+          obsLabel.style.marginBottom = '6px';
+          obsDiv.appendChild(obsLabel);
+
+          const obsTextarea = document.createElement('textarea');
+          obsTextarea.rows = 3;
+          obsTextarea.style.width = '100%';
+          obsTextarea.style.borderRadius = '8px';
+          obsTextarea.style.border = '1px solid #ccc';
+          obsTextarea.style.padding = '6px';
+          obsTextarea.value = observacionesGenerales;
+          obsTextarea.placeholder = 'Escribe aquí cualquier observación general...';
+          obsTextarea.oninput = (e) => {
+            observacionesGenerales = e.target.value;
+          };
+          obsDiv.appendChild(obsTextarea);
+
+          inner.appendChild(obsDiv);
+
           // Botón para guardar el estado de la bitácora
           const btnGuardar = document.createElement('button');
           btnGuardar.innerText = 'Guardar estado';
@@ -623,11 +652,19 @@ function App() {
       const snapshot = {};
       Object.entries(imgStates).forEach(([id, val]) => {
         if (val?.main !== 4) {
-          snapshot[id] = {
+          // Elimina secondaryCustom si es undefined para evitar error de Firebase
+          const snapVal = {
             main: val?.main ?? null,
             secondary: val?.secondary ?? null,
             src: getSrc(id)
           };
+          if (
+            typeof val?.secondaryCustom === "string" &&
+            val.secondaryCustom.trim() !== ""
+          ) {
+            snapVal.secondaryCustom = val.secondaryCustom;
+          }
+          snapshot[id] = snapVal;
         }
       });
       if (Object.keys(snapshot).length === 0) {
@@ -643,7 +680,8 @@ function App() {
         guardadoPor: nombre,
         fecha: now.toISOString(),
         bitacora: bitacora,
-        bitacoraEstados: bitacoraEstados
+        bitacoraEstados: bitacoraEstados,
+        observaciones: observacionesGenerales // Guardar observaciones generales
       });
       alert('Estado guardado correctamente por ' + nombre + '.');
       // Envía notificación de entrega de turno
@@ -2648,7 +2686,12 @@ function App() {
                           let secondaryLabel = "";
                           if (typeof state === "object" && state.secondary != null && state.main != null && state.main !== 4) {
                             const opts = secondaryOptionsMap[state.main] || [];
-                            secondaryLabel = opts[state.secondary] || "";
+                            // Mostrar la opción personalizada si es "Otros"
+                            if (opts[state.secondary] === "Otros" && state.secondaryCustom) {
+                              secondaryLabel = state.secondaryCustom;
+                            } else {
+                              secondaryLabel = opts[state.secondary] || "";
+                            }
                           }
                           return `
                                       <div class="img-col">
@@ -2745,12 +2788,15 @@ function App() {
                                   grid.style.maxHeight = "60vh";
                                   grid.style.overflowY = "auto";
                                   Object.entries(info.bitacoraEstados).forEach(([id, val]) => {
+                                    // Celda de cada máquina
                                     const cell = document.createElement('div');
                                     cell.style.marginBottom = "2px";
                                     cell.style.width = "90px";
                                     cell.style.textAlign = "center";
-                                    // Imagen
-                                    const img = document.createElement('img');
+
+                                    // Imagen de la máquina (input tipo image)
+                                    const img = document.createElement('input');
+                                    img.type = "image";
                                     img.width = ["S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8", "S9", "S10", "S11", "S12", "S13", "S14", "S15", "S16", "S17", "S18", "S19"].includes(id) ? 90 : 60;
                                     img.style.borderRadius = "16px";
                                     img.style.marginBottom = "0";
@@ -2786,8 +2832,8 @@ function App() {
                                     let subLabel = "";
                                     if (val && typeof val === "object" && val.secondary != null && val.main != null) {
                                       const opts = secondaryOptionsMap[val.main] || [];
-                                      if (opts[val.secondary] === "Otros" && val.secondaryCustom) {
-                                        subLabel = val.secondaryCustom;
+                                      if (opts[val.secondary] === "Otros" && val.secondaryCustom && val.secondaryCustom.trim() !== "") {
+                                        subLabel = val.secondaryCustom; // Mostrar la opción personalizada
                                       } else {
                                         subLabel = opts[val.secondary] || "";
                                         if (subLabel.length > 18) subLabel = subLabel.slice(0, 15) + "...";
@@ -2837,7 +2883,11 @@ function App() {
                               let secondaryLabel = "";
                               if (typeof state === "object" && state.secondary != null && state.main != null && state.main !== 4) {
                                 const opts = secondaryOptionsMap[state.main] || [];
-                                secondaryLabel = opts[state.secondary] || "";
+                                if (opts[state.secondary] === "Otros" && state.secondaryCustom && state.secondaryCustom.trim() !== "") {
+                                  secondaryLabel = state.secondaryCustom; // Mostrar la opción personalizada
+                                } else {
+                                  secondaryLabel = opts[state.secondary] || "";
+                                }
                               }
                               return (
                                 <div key={id} style={{
@@ -2860,9 +2910,7 @@ function App() {
                                   <div style={{ fontSize: 13, fontWeight: "bold", color: "#222" }}>{mainLabel}</div>
                                   {/* Subopción después */}
                                   <div style={{ fontSize: 12, color: "#007bff" }}>
-                                    {(state.main && state.secondary != null && secondaryOptionsMap[state.main])
-                                      ? secondaryOptionsMap[state.main][state.secondary] || ""
-                                      : ""}
+                                    {secondaryLabel}
                                   </div>
                                 </div>
                               );
@@ -2891,7 +2939,6 @@ function App() {
     </div >
   );
 }
-
 // --- Utilidad para limpiar undefined de un objeto recursivamente ---
 function removeUndefined(obj) {
   if (Array.isArray(obj)) {
@@ -2909,5 +2956,6 @@ function removeUndefined(obj) {
 }
 
 export default App;
+
 
 
