@@ -2676,10 +2676,6 @@ function App() {
         <button className="btn btn-secondary me-2" onClick={handleShowAllSnapshots}>
           Ver estados guardados
         </button>
-        {/* --- Nuevo botón para ver observaciones generales --- */}
-        <button className="btn btn-info me-2" onClick={handleShowObservaciones}>
-          Ver observaciones
-        </button>
         <button className="btn btn-success me-2" onClick={handleSaveSnapshotNow}>
           Guardar estado
         </button>
@@ -2799,6 +2795,8 @@ function App() {
                 ×
               </button>
               <h4>Todos los estados guardados</h4>
+              {/* Botones juntos: Ver bitácora y Ver observaciones */}
+
               {loadingSnapshots ? (
                 <div>Cargando...</div>
               ) : (
@@ -2901,103 +2899,162 @@ function App() {
                             )}
                             {/* Botón para ver bitácora */}
                             {info.bitacoraEstados && Object.keys(info.bitacoraEstados).length > 0 && (
-                              <button
-                                className="btn btn-outline-primary btn-sm ms-2"
-                                style={{ fontSize: 13, padding: "2px 10px" }}
-                                onClick={() => {
-                                  // Mostrar modal con la bitácora gráfica
-                                  const modalDiv = document.createElement('div');
-                                  modalDiv.style.position = 'fixed';
-                                  modalDiv.style.top = 0;
-                                  modalDiv.style.left = 0;
-                                  modalDiv.style.width = '100vw';
-                                  modalDiv.style.height = '100vh';
-                                  modalDiv.style.background = 'rgba(0,0,0,0.3)';
-                                  modalDiv.style.display = 'flex';
-                                  modalDiv.style.alignItems = 'center';
-                                  modalDiv.style.justifyContent = 'center';
-                                  modalDiv.style.zIndex = 999999;
+                              <>
+                                <button
+                                  className="btn btn-outline-primary btn-sm ms-2"
+                                  style={{ fontSize: 13, padding: "2px 10px" }}
+                                  onClick={() => {
+                                    // Mostrar modal con la bitácora gráfica
+                                    const modalDiv = document.createElement('div');
+                                    modalDiv.style.position = 'fixed';
+                                    modalDiv.style.top = 0;
+                                    modalDiv.style.left = 0;
+                                    modalDiv.style.width = '100vw';
+                                    modalDiv.style.height = '100vh';
+                                    modalDiv.style.background = 'rgba(0,0,0,0.3)';
+                                    modalDiv.style.display = 'flex';
+                                    modalDiv.style.alignItems = 'center';
+                                    modalDiv.style.justifyContent = 'center';
+                                    modalDiv.style.zIndex = 999999;
 
-                                  const inner = document.createElement('div');
-                                  inner.style.background = 'white';
-                                  inner.style.padding = '24px';
-                                  inner.style.borderRadius = '12px';
-                                  inner.style.textAlign = 'center';
-                                  inner.style.minWidth = '320px';
-                                  inner.style.maxWidth = '95vw';
-                                  inner.style.maxHeight = '90vh';
-                                  inner.style.overflow = 'auto';
+                                    const inner = document.createElement('div');
+                                    inner.style.background = 'white';
+                                    inner.style.padding = '24px';
+                                    inner.style.borderRadius = '12px';
+                                    inner.style.textAlign = 'center';
+                                    inner.style.minWidth = '320px';
+                                    inner.style.maxWidth = '95vw';
+                                    inner.style.maxHeight = '90vh';
+                                    inner.style.overflow = 'auto';
 
-                                  const title = document.createElement('div');
-                                  title.style.fontSize = '20px';
-                                  title.style.marginBottom = '16px';
-                                  title.innerText = 'Bitácora gráfica de máquinas atendidas';
-                                  inner.appendChild(title);
+                                    const title = document.createElement('div');
+                                    title.style.fontSize = '20px';
+                                    title.style.marginBottom = '16px';
+                                    title.innerText = 'Bitácora gráfica de máquinas atendidas';
+                                    inner.appendChild(title);
 
-                                  // Renderiza el grid de la bitácora
-                                  const grid = document.createElement('div');
-                                  grid.style.display = "grid";
-                                  grid.style.gap = "0";
-                                  grid.style.justifyItems = "center";
-                                  grid.style.gridTemplateColumns = "repeat(auto-fit, minmax(120px, 1fr))";
-                                  grid.style.maxHeight = "60vh";
-                                  grid.style.overflowY = "auto";
-                                  Object.entries(info.bitacoraEstados).forEach(([id, val]) => {
-                                    // Celda de cada máquina
-                                    const cell = document.createElement('div');
-                                    cell.style.marginBottom = "2px";
-                                    cell.style.width = "120px";
-                                    cell.style.textAlign = "center";
+                                    // Renderiza el grid de la bitácora
+                                    const grid = document.createElement('div');
+                                    grid.style.display = "grid";
+                                    grid.style.gap = "0";
+                                    grid.style.justifyItems = "center";
+                                    grid.style.gridTemplateColumns = "repeat(auto-fit, minmax(120px, 1fr))";
+                                    grid.style.maxHeight = "60vh";
+                                    grid.style.overflowY = "auto";
+                                    Object.entries(info.bitacoraEstados).forEach(([id, val]) => {
+                                      // Celda de cada máquina
+                                      const cell = document.createElement('div');
+                                      cell.style.marginBottom = "2px";
+                                      cell.style.width = "120px";
+                                      cell.style.textAlign = "center";
 
-                                    // Imagen de la máquina (input tipo image)
-                                    const img = document.createElement('input');
-                                    img.type = "image";
-                                    img.width = ["S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8", "S9", "S10", "S11", "S12", "S13", "S14", "S15", "S16", "S17", "S18", "S19"].includes(id) ? 90 : 60;
-                                    img.style.borderRadius = "16px";
-                                    img.style.marginBottom = "0";
-                                    img.style.border = "2px solid #eee";
-                                    img.style.background = "#fff";
-                                    img.src = val.src || cpd;
-                                    cell.appendChild(img);
+                                      // Imagen de la máquina (input tipo image)
+                                      const img = document.createElement('input');
+                                      img.type = "image";
+                                      img.width = ["S1", "S2", "S3", "S4", "S5", "S6", "S7", "S8", "S9", "S10", "S11", "S12", "S13", "S14", "S15", "S16", "S17", "S18", "S19"].includes(id) ? 90 : 60;
+                                      img.style.borderRadius = "16px";
+                                      img.style.marginBottom = "0";
+                                      img.style.border = "2px solid #eee";
+                                      img.style.background = "#fff";
+                                      img.src = val.src || cpd;
+                                      cell.appendChild(img);
 
-                                    // ID
-                                    const idDiv = document.createElement('div');
-                                    idDiv.innerHTML = `<strong>${id}</strong>`;
-                                    cell.appendChild(idDiv);
+                                      // ID
+                                      const idDiv = document.createElement('div');
+                                      idDiv.innerHTML = `<strong>${id}</strong>`;
+                                      cell.appendChild(idDiv);
 
-                                    // Main label como texto
-                                    const mainDiv = document.createElement('div');
-                                    mainDiv.style.fontSize = "13px";
-                                    mainDiv.style.fontWeight = "bold";
-                                    mainDiv.style.color = "#222";
-                                    mainDiv.innerText = val.main ? `${typeof val.main === "string" ? val.main : ""}` : "";
-                                    cell.appendChild(mainDiv);
+                                      // Main label como texto
+                                      const mainDiv = document.createElement('div');
+                                      mainDiv.style.fontSize = "13px";
+                                      mainDiv.style.fontWeight = "bold";
+                                      mainDiv.style.color = "#222";
+                                      mainDiv.innerText = val.main ? `${typeof val.main === "string" ? val.main : ""}` : "";
+                                      cell.appendChild(mainDiv);
 
-                                    // Secondary label como texto
-                                    const secDiv = document.createElement('div');
-                                    secDiv.style.fontSize = "12px";
-                                    secDiv.style.color = "#007bff";
-                                    secDiv.innerText = val.secondary ? `${typeof val.secondary === "string" ? val.secondary : ""}` : "";
-                                    cell.appendChild(secDiv);
+                                      // Secondary label como texto
+                                      const secDiv = document.createElement('div');
+                                      secDiv.style.fontSize = "12px";
+                                      secDiv.style.color = "#007bff";
+                                      secDiv.innerText = val.secondary ? `${typeof val.secondary === "string" ? val.secondary : ""}` : "";
+                                      cell.appendChild(secDiv);
 
-                                    grid.appendChild(cell);
-                                  });
+                                      grid.appendChild(cell);
+                                    });
 
-                                  inner.appendChild(grid);
+                                    inner.appendChild(grid);
 
-                                  const btnCerrar = document.createElement('button');
-                                  btnCerrar.innerText = "Cerrar";
-                                  btnCerrar.className = "btn btn-secondary mt-3";
-                                  btnCerrar.style.fontSize = "16px";
-                                  btnCerrar.onclick = () => {
-                                    document.body.removeChild(modalDiv);
-                                  };
-                                  inner.appendChild(btnCerrar);
+                                    const btnCerrar = document.createElement('button');
+                                    btnCerrar.innerText = "Cerrar";
+                                    btnCerrar.className = "btn btn-secondary mt-3";
+                                    btnCerrar.style.fontSize = "16px";
+                                    btnCerrar.onclick = () => {
+                                      document.body.removeChild(modalDiv);
+                                    };
+                                    inner.appendChild(btnCerrar);
 
-                                  modalDiv.appendChild(inner);
-                                  document.body.appendChild(modalDiv);
-                                }}
-                              >Ver bitácora</button>
+                                    modalDiv.appendChild(inner);
+                                    document.body.appendChild(modalDiv);
+                                  }}
+                                >Ver bitácora</button>
+                                {/* Botón para ver observaciones de este estado guardado */}
+                                <button
+                                  className="btn btn-outline-info btn-sm ms-2"
+                                  style={{ fontSize: 13, padding: "2px 10px" }}
+                                  onClick={() => {
+                                    // Mostrar modal con la observación de este snapshot
+                                    const modalDiv = document.createElement('div');
+                                    modalDiv.style.position = 'fixed';
+                                    modalDiv.style.top = 0;
+                                    modalDiv.style.left = 0;
+                                    modalDiv.style.width = '100vw';
+                                    modalDiv.style.height = '100vh';
+                                    modalDiv.style.background = 'rgba(0,0,0,0.3)';
+                                    modalDiv.style.display = 'flex';
+                                    modalDiv.style.alignItems = 'center';
+                                    modalDiv.style.justifyContent = 'center';
+                                    modalDiv.style.zIndex = 999999;
+
+                                    const inner = document.createElement('div');
+                                    inner.style.background = 'white';
+                                    inner.style.padding = '24px';
+                                    inner.style.borderRadius = '12px';
+                                    inner.style.textAlign = 'center';
+                                    inner.style.minWidth = '320px';
+                                    inner.style.maxWidth = '95vw';
+                                    inner.style.maxHeight = '90vh';
+                                    inner.style.overflow = 'auto';
+
+                                    const title = document.createElement('div');
+                                    title.style.fontSize = '20px';
+                                    title.style.marginBottom = '16px';
+                                    title.innerText = 'Observaciones generales';
+                                    inner.appendChild(title);
+
+                                    const obsDiv = document.createElement('div');
+                                    obsDiv.style.fontSize = '16px';
+                                    obsDiv.style.color = '#333';
+                                    obsDiv.style.margin = '12px 0 18px 0';
+                                    obsDiv.style.whiteSpace = 'pre-line';
+                                    obsDiv.innerText = info.observaciones && info.observaciones.trim() !== ""
+                                      ? info.observaciones
+                                      : "No hay observaciones guardadas para este estado.";
+                                    inner.appendChild(obsDiv);
+
+                                    const btnCerrar = document.createElement('button');
+                                    btnCerrar.innerText = "Cerrar";
+                                    btnCerrar.className = "btn btn-secondary mt-3";
+                                    btnCerrar.style.fontSize = "16px";
+                                    btnCerrar.onclick = () => {
+                                      document.body.removeChild(modalDiv);
+                                    };
+                                    inner.appendChild(btnCerrar);
+
+                                    modalDiv.appendChild(inner);
+                                    document.body.appendChild(modalDiv);
+                                  }}
+                                >Observaciones</button>
+                              </>
                             )}
                           </div>
                           <div style={{ display: "flex", flexWrap: "wrap", gap: 20 }}>
