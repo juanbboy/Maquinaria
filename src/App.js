@@ -608,8 +608,31 @@ function App() {
           btnGuardar.style.fontSize = '20px';
           btnGuardar.style.padding = '10px 24px';
           btnGuardar.onclick = () => {
-            // Solo guarda las máquinas que tengan main seleccionado
             const seleccionadas = maquinas.filter(id => bitacoraEstados[id] && bitacoraEstados[id].main != null);
+            // Si el usuario es "L. Paez", solo guardar observaciones generales (no guarda máquinas ni bitácora)
+            if (nombreSeleccionado === "L. Paez") {
+              document.body.removeChild(modalDiv);
+              resolve({
+                nombre: nombreSeleccionado,
+                bitacora: [],
+                bitacoraEstados: {},
+                soloObservaciones: true,
+                observacionesGenerales: observacionesGenerales.trim()
+              });
+              return;
+            }
+            // Si no hay ninguna máquina seleccionada, pero hay observaciones generales, permitir guardar solo observaciones
+            if (seleccionadas.length === 0 && observacionesGenerales.trim() !== "") {
+              document.body.removeChild(modalDiv);
+              resolve({
+                nombre: nombreSeleccionado,
+                bitacora: [],
+                bitacoraEstados: {},
+                soloObservaciones: true,
+                observacionesGenerales: observacionesGenerales.trim()
+              });
+              return;
+            }
             document.body.removeChild(modalDiv);
             resolve({ nombre: nombreSeleccionado, bitacora: seleccionadas, bitacoraEstados: { ...bitacoraEstados } });
           };
@@ -634,8 +657,23 @@ function App() {
     }).then(async (result) => {
       if (!result) return;
       const nombre = typeof result === "string" ? result : result.nombre;
-      const bitacora = typeof result === "string" ? [] : result.bitacora || [];
-      let bitacoraEstados = typeof result === "string" ? {} : result.bitacoraEstados || {};
+      // Si es solo observaciones y es "L. Paez", no guardar máquinas ni bitácora
+      const soloObservaciones = result.soloObservaciones || false;
+      const obsGenerales = result.observacionesGenerales || observacionesGenerales;
+      let bitacora = [];
+      let bitacoraEstados = {};
+      if (!soloObservaciones || nombre !== "L. Paez") {
+        bitacora = typeof result === "string" ? [] : result.bitacora || [];
+        bitacoraEstados = typeof result === "string" ? {} : result.bitacoraEstados || {};
+      }
+
+      // --- Filtrar solo "Electrónico" si el usuario es "J. Salazar" SOLO AL GUARDAR ---
+      let filteredImgStates = imgStates;
+      if (nombre === "J. Salazar") {
+        filteredImgStates = Object.fromEntries(
+          Object.entries(imgStates).filter(([_, val]) => val?.main === 3)
+        );
+      }
 
       // Limpia claves undefined antes de guardar en Firebase
       Object.keys(bitacoraEstados).forEach(id => {
@@ -650,24 +688,90 @@ function App() {
 
       // Guarda solo los estados que NO son de producción (main !== 4)
       const snapshot = {};
-      Object.entries(imgStates).forEach(([id, val]) => {
-        if (val?.main !== 4) {
-          // Elimina secondaryCustom si es undefined para evitar error de Firebase
-          const snapVal = {
-            main: val?.main ?? null,
-            secondary: val?.secondary ?? null,
-            src: getSrc(id)
-          };
+      if (!soloObservaciones || nombre !== "L. Paez") {
+        Object.entries(filteredImgStates).forEach(([id, val]) => {
+          // Solo guardar Electrónico si es J. Salazar, si no, igual que antes
           if (
-            typeof val?.secondaryCustom === "string" &&
-            val.secondaryCustom.trim() !== ""
+            (nombre === "J. Salazar" && val?.main === 3) ||
+            (nombre !== "J. Salazar" && val?.main !== 4)
           ) {
-            snapVal.secondaryCustom = val.secondaryCustom;
+            let mainLabel = "";
+            let secondaryLabel = "";
+            if (val?.main != null) {
+              const mainOpt = mainOptions.find(opt => opt.main === val.main);
+              mainLabel = mainOpt ? mainOpt.label : "";
+            }
+            if (val?.main != null && val?.secondary != null) {
+              const opts = secondaryOptionsMap[val.main] || [];
+              if (opts[val.secondary] === "Otros" && val.secondaryCustom) {
+                secondaryLabel = val.secondaryCustom;
+              } else {
+                secondaryLabel = opts[val.secondary] || "";
+              }
+            }
+            const snapVal = {
+              main: mainLabel,
+              secondary: secondaryLabel,
+              src: getSrc(id)
+            };
+            if (
+              typeof val?.secondaryCustom === "string" &&
+              val.secondaryCustom.trim() !== ""
+            ) {
+              snapVal.secondaryCustom = val.secondaryCustom;
+            }
+            snapshot[id] = snapVal;
           }
-          snapshot[id] = snapVal;
-        }
-      });
-      if (Object.keys(snapshot).length === 0) {
+        });
+      }
+
+      // --- Guardar bitacoraEstados with main y secondary como texto y color (color de la imagen) ---
+      let bitacoraEstadosTexto = {};
+      if (!soloObservaciones || nombre !== "L. Paez") {
+        Object.entries(bitacoraEstados).forEach(([id, val]) => {
+          if (val && val.main != null) {
+            let mainLabel = "";
+            let secondaryLabel = "";
+            let color = "";
+            let src = "";
+            const mainOpt = mainOptions.find(opt => opt.main === val.main);
+            mainLabel = mainOpt ? mainOpt.label : "";
+            color = mainOpt && mainOpt.className ? mainOpt.className : "";
+            // Obtener src de la imagen según el estado
+            switch (val.main) {
+              case 1: src = require('./assets/cpdrojo.png'); break;
+              case 2: src = require('./assets/cpdnegro.png'); break;
+              case 3: src = require('./assets/cpdamarillo.png'); break;
+              case 4: src = require('./assets/cpdblanco.png'); break;
+              case 5: src = require('./assets/cpdverde.png'); break;
+              case 6: src = require('./assets/cpdazul.png'); break;
+              default: src = cpd;
+            }
+            if (val.secondary != null) {
+              const opts = secondaryOptionsMap[val.main] || [];
+              if (opts[val.secondary] === "Otros" && val.secondaryCustom) {
+                secondaryLabel = val.secondaryCustom;
+              } else {
+                secondaryLabel = opts[val.secondary] || "";
+              }
+            }
+            bitacoraEstadosTexto[id] = {
+              main: mainLabel,
+              secondary: secondaryLabel,
+              color: color,
+              src: src
+            };
+            if (
+              typeof val?.secondaryCustom === "string" &&
+              val.secondaryCustom.trim() !== ""
+            ) {
+              bitacoraEstadosTexto[id].secondaryCustom = val.secondaryCustom;
+            }
+          }
+        });
+      }
+
+      if ((Object.keys(snapshot).length === 0 && !soloObservaciones) || (nombre === "L. Paez" && !obsGenerales)) {
         alert('No hay estados fuera de producción para guardar.');
         return;
       }
@@ -675,13 +779,15 @@ function App() {
       const now = new Date();
       const pad = n => n.toString().padStart(2, '0');
       const key = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
-      await set(ref(db, `snapshots/${key}`), snapshot);
+      if (!soloObservaciones || nombre !== "L. Paez") {
+        await set(ref(db, `snapshots/${key}`), snapshot);
+      }
       await set(ref(db, `snapshotsInfo/${key}`), {
         guardadoPor: nombre,
         fecha: now.toISOString(),
-        bitacora: bitacora,
-        bitacoraEstados: bitacoraEstados,
-        observaciones: observacionesGenerales // Guardar observaciones generales
+        bitacora: (nombre === "L. Paez" && soloObservaciones) ? [] : bitacora,
+        bitacoraEstados: (nombre === "L. Paez" && soloObservaciones) ? {} : bitacoraEstadosTexto,
+        observaciones: obsGenerales // Guardar observaciones generales
       });
       alert('Estado guardado correctamente por ' + nombre + '.');
       // Envía notificación de entrega de turno
@@ -862,6 +968,36 @@ function App() {
       setAllSnapshots(arr);
     } catch (e) {
       setAllSnapshots([]);
+    }
+    setLoadingSnapshots(false);
+  };
+
+  // --- Estado para mostrar las observaciones generales de los snapshots ---
+  const [showObservaciones, setShowObservaciones] = useState(false);
+  const [observacionesList, setObservacionesList] = useState([]);
+
+  // Función para cargar y mostrar las observaciones generales de todos los snapshots
+  const handleShowObservaciones = async () => {
+    setShowObservaciones(true);
+    setLoadingSnapshots(true);
+    try {
+      const { getDatabase, ref, get } = await import("firebase/database");
+      const db = getDatabase();
+      const infoSnap = await get(ref(db, "snapshotsInfo"));
+      const infoData = infoSnap.exists() ? infoSnap.val() : {};
+      // Ordenar por fecha descendente
+      const arr = Object.entries(infoData)
+        .sort((a, b) => b[0].localeCompare(a[0]))
+        .map(([key, info]) => ({
+          key,
+          fecha: info.fecha ? new Date(info.fecha).toLocaleString() : key,
+          guardadoPor: info.guardadoPor || "",
+          observaciones: info.observaciones || ""
+        }))
+        .filter(item => item.observaciones && item.observaciones.trim() !== "");
+      setObservacionesList(arr);
+    } catch (e) {
+      setObservacionesList([]);
     }
     setLoadingSnapshots(false);
   };
@@ -1346,7 +1482,7 @@ function App() {
               <div style={{ fontSize: 14, color: "#888" }}>{getSecondaryLabel("S4")}</div>
             </div>
           </div>
-          <div className="col p-0" >
+          <div className="col p-0">
             <div>
               <span className="d-none">14"(M)</span>
             </div>
@@ -1759,64 +1895,6 @@ function App() {
                     borderRadius: 12
                   }}>
                     {getSecondaryLabel("54") || "\u00A0"}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="col ">
-            <div className="row ">
-              <div className="col " >
-                <div>
-                  <span className="d-none">4"(Panty)</span>
-                </div>
-                <input ref={setImgRef("34")} type="image" onClick={img} src={getSrc("34")} width={60} alt="Placeholder" data-id="34"
-                  style={{ borderRadius: 16 }} />
-                <div>
-                  <strong>34</strong>
-                  <div style={{
-                    fontSize: 14,
-                    color: "#888",
-                    minHeight: 20,
-                    height: 20,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                    width: "100%",
-                    borderRadius: 12
-                  }}>
-                    {getSecondaryLabel("34") || "\u00A0"}
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className="row ">
-              <div className="col " >
-                <div>
-                  <span className="d-none">4"(Panty)</span>
-                </div>
-                <input ref={setImgRef("53")} type="image" onClick={img} src={getSrc("53")} width={60} alt="Placeholder" data-id="53"
-                  style={{ borderRadius: 16 }} />
-                <div>
-                  <strong>53</strong>
-                  <div style={{
-                    fontSize: 14,
-                    color: "#888",
-                    minHeight: 20,
-                    height: 20,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                    width: "100%",
-                    borderRadius: 12
-                  }}>
-                    {getSecondaryLabel("53") || "\u00A0"}
                   </div>
                 </div>
               </div>
@@ -2598,6 +2676,10 @@ function App() {
         <button className="btn btn-secondary me-2" onClick={handleShowAllSnapshots}>
           Ver estados guardados
         </button>
+        {/* --- Nuevo botón para ver observaciones generales --- */}
+        <button className="btn btn-info me-2" onClick={handleShowObservaciones}>
+          Ver observaciones
+        </button>
         <button className="btn btn-success me-2" onClick={handleSaveSnapshotNow}>
           Guardar estado
         </button>
@@ -2608,6 +2690,78 @@ function App() {
           </button>
         )}
       </div>
+      {/* --- Modal para mostrar observaciones generales de los snapshots --- */}
+      {showObservaciones && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
+          background: 'rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 99999
+        }}>
+          <div style={{
+            background: 'white',
+            padding: 24,
+            borderRadius: 8,
+            minWidth: 320,
+            maxWidth: 600,
+            maxHeight: '90vh',
+            overflow: 'auto',
+            position: 'relative'
+          }}>
+            <button
+              onClick={() => setShowObservaciones(false)}
+              style={{
+                position: 'absolute',
+                top: 12,
+                right: 12,
+                zIndex: 1000,
+                fontSize: 22,
+                background: 'transparent',
+                border: 'none',
+                color: '#333',
+                cursor: 'pointer'
+              }}
+              aria-label="Cerrar"
+              title="Cerrar"
+            >
+              ×
+            </button>
+            <h4>Observaciones generales</h4>
+            {loadingSnapshots ? (
+              <div>Cargando...</div>
+            ) : (
+              observacionesList.length === 0 ? (
+                <div>No hay observaciones generales guardadas.</div>
+              ) : (
+                <div style={{ maxHeight: 500, overflowY: 'auto' }}>
+                  {observacionesList.map(({ key, fecha, guardadoPor, observaciones }) => (
+                    <div key={key} style={{
+                      borderBottom: "1px solid #ddd",
+                      marginBottom: 12,
+                      paddingBottom: 8
+                    }}>
+                      <div style={{ fontSize: 15, color: "#000" }}>
+                        {fecha}
+                        {guardadoPor && <> &nbsp;|&nbsp; <b>{guardadoPor}</b></>}
+                      </div>
+                      <div style={{ fontSize: 16, color: "#333", marginTop: 4, whiteSpace: "pre-line" }}>
+                        {observaciones}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )
+            )}
+            <div style={{ textAlign: "center", marginTop: 18 }}>
+              <button
+                className="btn btn-secondary"
+                style={{ fontSize: 18, padding: "8px 32px" }}
+                onClick={() => setShowObservaciones(false)}
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Modal para mostrar todos los snapshots guardados */}
       {
         showAllSnapshots && (
@@ -2622,7 +2776,8 @@ function App() {
               minWidth: 320,
               maxWidth: 900,
               maxHeight: '90vh',
-              overflow: 'auto'
+              overflow: 'auto',
+              position: 'relative'
             }}>
               {/* Botón cerrar visible arriba a la derecha */}
               <button
@@ -2784,14 +2939,14 @@ function App() {
                                   grid.style.display = "grid";
                                   grid.style.gap = "0";
                                   grid.style.justifyItems = "center";
-                                  grid.style.gridTemplateColumns = "repeat(auto-fit, minmax(90px, 1fr))";
+                                  grid.style.gridTemplateColumns = "repeat(auto-fit, minmax(120px, 1fr))";
                                   grid.style.maxHeight = "60vh";
                                   grid.style.overflowY = "auto";
                                   Object.entries(info.bitacoraEstados).forEach(([id, val]) => {
                                     // Celda de cada máquina
                                     const cell = document.createElement('div');
                                     cell.style.marginBottom = "2px";
-                                    cell.style.width = "90px";
+                                    cell.style.width = "120px";
                                     cell.style.textAlign = "center";
 
                                     // Imagen de la máquina (input tipo image)
@@ -2802,18 +2957,7 @@ function App() {
                                     img.style.marginBottom = "0";
                                     img.style.border = "2px solid #eee";
                                     img.style.background = "#fff";
-                                    img.src = (() => {
-                                      if (!val || val.main == null) return cpd;
-                                      switch (val.main) {
-                                        case 1: return require('./assets/cpdrojo.png');
-                                        case 2: return require('./assets/cpdnegro.png');
-                                        case 3: return require('./assets/cpdamarillo.png');
-                                        case 4: return require('./assets/cpdblanco.png');
-                                        case 5: return require('./assets/cpdverde.png');
-                                        case 6: return require('./assets/cpdazul.png');
-                                        default: return cpd;
-                                      }
-                                    })();
+                                    img.src = val.src || cpd;
                                     cell.appendChild(img);
 
                                     // ID
@@ -2821,39 +2965,20 @@ function App() {
                                     idDiv.innerHTML = `<strong>${id}</strong>`;
                                     cell.appendChild(idDiv);
 
-                                    // Main label primero
+                                    // Main label como texto
                                     const mainDiv = document.createElement('div');
-                                    mainDiv.style.fontSize = "12px";
-                                    mainDiv.style.color = "#333";
-                                    mainDiv.innerText = mainLabels[val.main] || "";
+                                    mainDiv.style.fontSize = "13px";
+                                    mainDiv.style.fontWeight = "bold";
+                                    mainDiv.style.color = "#222";
+                                    mainDiv.innerText = val.main ? `${typeof val.main === "string" ? val.main : ""}` : "";
                                     cell.appendChild(mainDiv);
 
-                                    // Subopción después
-                                    let subLabel = "";
-                                    if (val && typeof val === "object" && val.secondary != null && val.main != null) {
-                                      const opts = secondaryOptionsMap[val.main] || [];
-                                      if (opts[val.secondary] === "Otros" && val.secondaryCustom && val.secondaryCustom.trim() !== "") {
-                                        subLabel = val.secondaryCustom; // Mostrar la opción personalizada
-                                      } else {
-                                        subLabel = opts[val.secondary] || "";
-                                        if (subLabel.length > 18) subLabel = subLabel.slice(0, 15) + "...";
-                                      }
-                                    }
-                                    const subDiv = document.createElement('div');
-                                    subDiv.style.fontSize = "13px";
-                                    subDiv.style.color = "#888";
-                                    subDiv.style.minHeight = "20px";
-                                    subDiv.style.height = "20px";
-                                    subDiv.style.display = "flex";
-                                    subDiv.style.alignItems = "center";
-                                    subDiv.style.justifyContent = "center";
-                                    subDiv.style.overflow = "hidden";
-                                    subDiv.style.textOverflow = "ellipsis";
-                                    subDiv.style.whiteSpace = "nowrap";
-                                    subDiv.style.width = "100%";
-                                    subDiv.style.borderRadius = "12px";
-                                    subDiv.innerText = subLabel || "\u00A0";
-                                    cell.appendChild(subDiv);
+                                    // Secondary label como texto
+                                    const secDiv = document.createElement('div');
+                                    secDiv.style.fontSize = "12px";
+                                    secDiv.style.color = "#007bff";
+                                    secDiv.innerText = val.secondary ? `${typeof val.secondary === "string" ? val.secondary : ""}` : "";
+                                    cell.appendChild(secDiv);
 
                                     grid.appendChild(cell);
                                   });
@@ -2876,45 +3001,32 @@ function App() {
                             )}
                           </div>
                           <div style={{ display: "flex", flexWrap: "wrap", gap: 20 }}>
-                            {Object.entries(value).map(([id, state]) => {
-                              // Usa la imagen guardada en src, si no existe usa dummy
-                              let src = state.src || "https://dummyimage.com/105x105/ccc/fff&text=" + id;
-                              let mainLabel = mainLabels[state.main] || "";
-                              let secondaryLabel = "";
-                              if (typeof state === "object" && state.secondary != null && state.main != null && state.main !== 4) {
-                                const opts = secondaryOptionsMap[state.main] || [];
-                                if (opts[state.secondary] === "Otros" && state.secondaryCustom && state.secondaryCustom.trim() !== "") {
-                                  secondaryLabel = state.secondaryCustom; // Mostrar la opción personalizada
-                                } else {
-                                  secondaryLabel = opts[state.secondary] || "";
-                                }
-                              }
-                              return (
-                                <div key={id} style={{
-                                  display: "flex", flexDirection: "column", alignItems: "center", margin: 10, width: 105
-                                }}>
-                                  <img
-                                    src={state.src || "https://dummyimage.com/105x105/ccc/fff&text=" + id}
-                                    alt={id}
-                                    title={id}
-                                    style={{
-                                      borderRadius: 16,
-                                      border: "2px solid #888",
-                                      width: 95,
-                                      height: 95,
-                                      objectFit: "contain"
-                                    }}
-                                  />
-                                  <div style={{ fontSize: 14, color: "#555", marginTop: 2 }}><b>{id}</b></div>
-                                  {/* Main label primero */}
-                                  <div style={{ fontSize: 13, fontWeight: "bold", color: "#222" }}>{mainLabel}</div>
-                                  {/* Subopción después */}
-                                  <div style={{ fontSize: 12, color: "#007bff" }}>
-                                    {secondaryLabel}
-                                  </div>
+                            {Object.entries(value).map(([id, state]) => (
+                              <div key={id} style={{
+                                display: "flex", flexDirection: "column", alignItems: "center", margin: 10, width: 120
+                              }}>
+                                <img
+                                  src={state.src || "https://dummyimage.com/105x105/ccc/fff&text=" + id}
+                                  alt={id}
+                                  title={id}
+                                  style={{
+                                    borderRadius: 16,
+                                    border: "2px solid #888",
+                                    width: 95,
+                                    height: 95,
+                                    objectFit: "contain"
+                                  }}
+                                />
+                                <div style={{ fontSize: 14, color: "#555", marginTop: 2 }}><b>{id}</b></div>
+                                {/* Mostrar main y secondary como texto */}
+                                <div style={{ fontSize: 13, fontWeight: "bold", color: "#222" }}>
+                                  {state.main ? `${state.main}` : ""}
                                 </div>
-                              );
-                            })}
+                                <div style={{ fontSize: 12, color: "#007bff" }}>
+                                  {state.secondary ? `${state.secondary}` : ""}
+                                </div>
+                              </div>
+                            ))}
                           </div>
                         </div>
                       );
@@ -2939,6 +3051,7 @@ function App() {
     </div >
   );
 }
+
 // --- Utilidad para limpiar undefined de un objeto recursivamente ---
 function removeUndefined(obj) {
   if (Array.isArray(obj)) {
@@ -2956,6 +3069,5 @@ function removeUndefined(obj) {
 }
 
 export default App;
-
 
 
