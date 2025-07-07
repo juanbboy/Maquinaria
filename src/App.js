@@ -211,7 +211,7 @@ function App() {
     { label: "Mecánico", main: 1, className: "btn btn-danger" },
     { label: "Barrado", main: 2, className: "btn btn-dark" },
     { label: "Electrónico", main: 3, className: "btn btn-warning" },
-    { label: "Tallaje", main: 6, className: "btn btn-primary", style: { backgroundColor: "#007bff", borderColor: "#007bff" } },
+    { label: "Tallaje", main: 6, className: "btn btn-primary" },
     { label: "Seguimiento", main: 5, className: "btn btn-success" },
     { label: "Producción", main: 4, className: "btn btn-light" }
   ];
@@ -223,7 +223,7 @@ function App() {
       "Huecos y rotos", "Aguja", "Selectores", "Motores MPP", "Cuchillas", "correa", "Manguera rota", "Lubricacion", "Guia hilos", "Otros", "Limpieza", "Trasdenuto", "Escaricato"
     ],
     2: [
-      "Licra", "Nylon", "Motores"
+      "Licra", "Nylon", "Motores", "Sin programa"
     ],
     3: [
       "Valvulas", "Motores MPP", "No enciende", "Turbina", "Motor principal", "Sensores",
@@ -798,15 +798,6 @@ function App() {
     });
   };
 
-  // --- Helpers para UI y lógica de la app ---
-
-  // Devuelve una función para referenciar inputs de imagen (no usado aquí)
-  function setImgRef(id) {
-    return (el) => {
-      // opcional: puedes guardar refs si los necesitas
-    };
-  }
-
   // Abre el modal de opciones para una máquina
   function img(event) {
     setModal({ show: true, target: event.target, main: null });
@@ -908,38 +899,6 @@ function App() {
     }, 0);
   }
 
-  // --- Helpers para snapshots locales (no usados en la UI principal) ---
-  // eslint-disable-next-line no-unused-vars
-  const [showSnapshot, setShowSnapshot] = useState(false);
-  // eslint-disable-next-line no-unused-vars
-  const [snapshotData, setSnapshotData] = useState([null, null, null]);
-  // eslint-disable-next-line no-unused-vars
-  const [snapshotDate, setSnapshotDate] = useState([null, null, null]);
-  // eslint-disable-next-line no-unused-vars
-  function handleShowSnapshot() {
-    try {
-      const dataArr = [0, 1, 2].map(i => {
-        const data = localStorage.getItem(`imgStates_snapshot_${i}`);
-        return data ? JSON.parse(data) : null;
-      });
-      const dateArr = [0, 1, 2].map(i => {
-        const date = localStorage.getItem(`imgStates_snapshot_date_${i}`);
-        return date ? new Date(date).toLocaleString() : null;
-      });
-      setSnapshotData(dataArr);
-      setSnapshotDate(dateArr);
-      setShowSnapshot(true);
-    } catch {
-      setSnapshotData([null, null, null]);
-      setSnapshotDate([null, null, null]);
-      setShowSnapshot(true);
-    }
-  }
-  // eslint-disable-next-line no-unused-vars
-  function handleCloseSnapshot() {
-    setShowSnapshot(false);
-  }
-
   // --- Estado y helpers para mostrar todos los snapshots guardados en Firebase ---
   const [allSnapshots, setAllSnapshots] = useState([]);
   const [showAllSnapshots, setShowAllSnapshots] = useState(false);
@@ -1005,7 +964,6 @@ function App() {
   // --- Render principal de la app ---
   return (
     <div className="App">
-      {/* Título principal */}
       <h1 className="text-center p-4">
         <span className="d-block d-md-none" style={{ fontSize: 26 }}>Circulares Pequeño Diametro</span>
         <span className="d-none d-md-block" style={{ fontSize: 36 }}>Circulares Pequeño Diametro</span>
@@ -1028,7 +986,6 @@ function App() {
           ].map(id => (
             <div key={id} style={{ marginBottom: 2, width: 90, textAlign: "center" }}>
               <input
-                ref={setImgRef(id)}
                 type="image"
                 onClick={img}
                 src={getSrc(id)}
@@ -1058,7 +1015,6 @@ function App() {
                 whiteSpace: "nowrap",
                 width: "100%",
                 borderRadius: 12
-                // background eliminado para dejar sin color
               }}>
                 {getSecondaryLabel(id) || "\u00A0"}
               </div>
@@ -1068,368 +1024,156 @@ function App() {
       </div>
       {/* Grid de máquinas para PC/tablet */}
       <div className="px-4 d-none d-md-block">
-        {/* Aquí se renderiza el grid de máquinas para escritorio */}
         <div className="row py-4 text-center">
           <div className="col p-0 ">
-            <div>
-              <span className="d-none">16"(XL)</span>
-            </div>
-            <input ref={setImgRef("S19")} type="image" onClick={img} src={getSrc("S19")} width={90} alt="Placeholder" data-id="S19"
-              style={{ borderRadius: 16 }} />
+
+            <input type="image" onClick={img} src={getSrc("S19")} width={90} alt="Placeholder" data-id="S19"
+              className='borde' />
             <div>
               <strong>S19</strong>
-              <div style={{
-                fontSize: 14,
-                color: "#888",
-                minHeight: 20,
-                height: 20,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-                width: "100%",
-                borderRadius: 12
-              }}>
+              <div className="mq">
                 {getSecondaryLabel("S19") || "\u00A0"}
               </div>
             </div>
           </div>
           <div className="col p-0 ">
-            <div>
-              <span className="d-none">14"(M)</span>
-            </div>
-            <input ref={setImgRef("S3")} type="image" onClick={img} src={getSrc("S3")} width={90} alt="Placeholder" data-id="S3"
-              style={{ borderRadius: 16 }} />
+
+            <input type="image" onClick={img} src={getSrc("S3")} width={90} alt="Placeholder" data-id="S3"
+              className='borde' />
             <div>
               <strong>S3</strong>
-              <div style={{
-                fontSize: 14,
-                color: "#888",
-                minHeight: 20,
-                height: 20,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-                width: "100%",
-                borderRadius: 12
-              }}>
+              <div className="mq">
                 {getSecondaryLabel("S3") || "\u00A0"}
               </div>
             </div>
           </div>
           <div className="col p-0">
-            <div>
-              <span className="d-none">15"(L)</span>
-            </div>
-            <input ref={setImgRef("S2")} type="image" onClick={img} src={getSrc("S2")} width={90} alt="Placeholder" data-id="S2"
-              style={{ borderRadius: 16 }} />
+
+            <input type="image" onClick={img} src={getSrc("S2")} width={90} alt="Placeholder" data-id="S2"
+              className='borde' />
             <div>
               <strong>S2</strong>
-              <div style={{
-                fontSize: 14,
-                color: "#888",
-                minHeight: 20,
-                height: 20,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-                width: "100%",
-                borderRadius: 12
-              }}>
+              <div className="mq">
                 {getSecondaryLabel("S2") || "\u00A0"}
               </div>
             </div>
           </div>
           <div className="col p-0 ">
-            <div>
-              <span className="d-none">15"(L)</span>
-            </div>
-            <input ref={setImgRef("S1")} type="image" onClick={img} src={getSrc("S1")} width={90} alt="Placeholder" data-id="S1"
-              style={{ borderRadius: 16 }} />
+
+            <input type="image" onClick={img} src={getSrc("S1")} width={90} alt="Placeholder" data-id="S1"
+              className='borde' />
             <div>
               <strong>S1</strong>
-              <div style={{
-                fontSize: 14,
-                color: "#888",
-                minHeight: 20,
-                height: 20,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-                width: "100%",
-                borderRadius: 12
-              }}>
+              <div className="mq">
                 {getSecondaryLabel("S1") || "\u00A0"}
               </div>
             </div>
           </div>
           <div className="col p-0">
-            <div>
-              <span className="d-none">14"(M)</span>
-            </div>
-            <input ref={setImgRef("S6")} type="image" onClick={img} src={getSrc("S6")} width={90} alt="Placeholder" data-id="S6"
-              style={{ borderRadius: 16 }} />
+
+            <input type="image" onClick={img} src={getSrc("S6")} width={90} alt="Placeholder" data-id="S6"
+              className='borde' />
             <div>
               <strong>S6</strong>
-              <div style={{
-                fontSize: 14,
-                color: "#888",
-                minHeight: 20,
-                height: 20,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-                width: "100%",
-                borderRadius: 12
-              }}>
+              <div className="mq">
                 {getSecondaryLabel("S6") || "\u00A0"}
               </div>
             </div>
           </div>
           <div className="col  p-0">
-            <div>
-              <span className="d-none">13"(S)</span>
-            </div>
-            <input ref={setImgRef("S7")} type="image" onClick={img} src={getSrc("S7")} width={90} alt="Placeholder" data-id="S7"
-              style={{ borderRadius: 16 }} />
+            <input type="image" onClick={img} src={getSrc("S7")} width={90} alt="Placeholder" data-id="S7"
+              className='borde' />
             <div>
               <strong>S7</strong>
-              <div style={{
-                fontSize: 14,
-                color: "#888",
-                minHeight: 20,
-                height: 20,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-                width: "100%",
-                borderRadius: 12
-              }}>
+              <div className="mq">
                 {getSecondaryLabel("S7") || "\u00A0"}
               </div>
             </div>
           </div>
           <div className="col p-0">
-            <div>
-              <span className="d-none">13"(S)</span>
-            </div>
-            <input ref={setImgRef("S8")} type="image" onClick={img} src={getSrc("S8")} width={90} alt="Placeholder" data-id="S8"
-              style={{ borderRadius: 16 }} />
+
+            <input type="image" onClick={img} src={getSrc("S8")} width={90} alt="Placeholder" data-id="S8"
+              className='borde' />
             <div>
               <strong>S8</strong>
-              <div style={{
-                fontSize: 14,
-                color: "#888",
-                minHeight: 20,
-                height: 20,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-                width: "100%",
-                borderRadius: 12
-              }}>
+              <div className="mq">
                 {getSecondaryLabel("S8") || "\u00A0"}
               </div>
             </div>
           </div>
           <div className="col p-0 ">
-            <div>
-              <span className="d-none">13"(S)</span>
-            </div>
-            <input ref={setImgRef("S9")} type="image" onClick={img} src={getSrc("S9")} width={90} alt="Placeholder" data-id="S9"
-              style={{ borderRadius: 16 }} />
+
+            <input type="image" onClick={img} src={getSrc("S9")} width={90} alt="Placeholder" data-id="S9"
+              className='borde' />
             <div>
               <strong>S9</strong>
-              <div style={{
-                fontSize: 14,
-                color: "#888",
-                minHeight: 20,
-                height: 20,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-                width: "100%",
-                borderRadius: 12
-              }}>
+              <div className="mq">
                 {getSecondaryLabel("S9") || "\u00A0"}
               </div>
             </div>
           </div>
           <div className="col p-0 ">
-            <div>
-              <span className="d-none">13"(S)</span>
-            </div>
-            <input ref={setImgRef("S10")} type="image" onClick={img} src={getSrc("S10")} width={90} alt="Placeholder" data-id="S10"
-              style={{ borderRadius: 16 }} />
+
+            <input type="image" onClick={img} src={getSrc("S10")} width={90} alt="Placeholder" data-id="S10"
+              className='borde' />
             <div>
               <strong>S10</strong>
-              <div style={{
-                fontSize: 14,
-                color: "#888",
-                minHeight: 20,
-                height: 20,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-                width: "100%",
-                borderRadius: 12
-              }}>
+              <div className="mq">
                 {getSecondaryLabel("S10") || "\u00A0"}
               </div>
             </div>
           </div>
           <div className="col p-0 ">
-            <div>
-              <span className="d-none">14"(M)</span>
-            </div>
-            <input ref={setImgRef("S11")} type="image" onClick={img} src={getSrc("S11")} width={90} alt="Placeholder" data-id="S11"
-              style={{ borderRadius: 16 }} />
+
+            <input type="image" onClick={img} src={getSrc("S11")} width={90} alt="Placeholder" data-id="S11"
+              className='borde' />
             <div>
               <strong>S11</strong>
-              <div style={{
-                fontSize: 14,
-                color: "#888",
-                minHeight: 20,
-                height: 20,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-                width: "100%",
-                borderRadius: 12
-              }}>
+              <div className="mq">
                 {getSecondaryLabel("S11") || "\u00A0"}
               </div>
             </div>
           </div>
           <div className="col p-0 ">
-            <div>
-              <span className="d-none">14"(M)</span>
-            </div>
-            <input ref={setImgRef("S12")} type="image" onClick={img} src={getSrc("S12")} width={90} alt="Placeholder" data-id="S12"
-              style={{ borderRadius: 16 }} />
+
+            <input type="image" onClick={img} src={getSrc("S12")} width={90} alt="Placeholder" data-id="S12"
+              className='borde' />
             <div>
               <strong>S12</strong>
-              <div style={{
-                fontSize: 14,
-                color: "#888",
-                minHeight: 20,
-                height: 20,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-                width: "100%",
-                borderRadius: 12
-              }}>
+              <div className="mq">
                 {getSecondaryLabel("S12") || "\u00A0"}
               </div>
             </div>
           </div>
           <div className="col p-0">
-            <div>
-              <span className="d-none">14"(M)</span>
-            </div>
-            <input ref={setImgRef("S13")} type="image" onClick={img} src={getSrc("S13")} width={90} alt="Placeholder" data-id="S13"
-              style={{ borderRadius: 16 }} />
+
+            <input type="image" onClick={img} src={getSrc("S13")} width={90} alt="Placeholder" data-id="S13"
+              className='borde' />
             <div>
               <strong>S13</strong>
-              <div style={{
-                fontSize: 14,
-                color: "#888",
-                minHeight: 20,
-                height: 20,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-                width: "100%",
-                borderRadius: 12
-              }}>
+              <div className="mq">
                 {getSecondaryLabel("S13") || "\u00A0"}
               </div>
             </div>
           </div>
           <div className="col p-0">
-            <div>
-              <span className="d-none">15"(L)</span>
-            </div>
-            <input ref={setImgRef("S14")} type="image" onClick={img} src={getSrc("S14")} width={90} alt="Placeholder" data-id="S14"
-              style={{ borderRadius: 16 }} />
+
+            <input type="image" onClick={img} src={getSrc("S14")} width={90} alt="Placeholder" data-id="S14"
+              className='borde' />
             <div>
               <strong>S14</strong>
-              <div style={{
-                fontSize: 14,
-                color: "#888",
-                minHeight: 20,
-                height: 20,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-                width: "100%",
-                borderRadius: 12
-              }}>
+              <div className="mq">
                 {getSecondaryLabel("S14") || "\u00A0"}
               </div>
             </div>
           </div>
           <div className="col p-0">
-            <div>
-              <span className="d-none">15"(L)</span>
-            </div>
-            <input ref={setImgRef("S15")} type="image" onClick={img} src={getSrc("S15")} width={90} alt="Placeholder" data-id="S15"
-              style={{ borderRadius: 16 }} />
+
+            <input type="image" onClick={img} src={getSrc("S15")} width={90} alt="Placeholder" data-id="S15"
+              className='borde' />
             <div>
               <strong>S15</strong>
-              <div style={{
-                fontSize: 14,
-                color: "#888",
-                minHeight: 20,
-                height: 20,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-                width: "100%",
-                borderRadius: 12
-              }}>
+              <div className="mq">
                 {getSecondaryLabel("S15") || "\u00A0"}
               </div>
             </div>
@@ -1439,55 +1183,44 @@ function App() {
 
         <div className="row py-5 text-center no-gutters align-items-center">
           <div className="col p-0 " >
-            <div>
-              <span className="d-none">15"(L)</span>
-            </div>
-            <input ref={setImgRef("S18")} type="image" onClick={img} src={getSrc("S18")} width={90} alt="Placeholder" data-id="S18"
-              style={{ borderRadius: 16 }} />
+
+            <input type="image" onClick={img} src={getSrc("S18")} width={90} alt="Placeholder" data-id="S18"
+              className='borde' />
             <div>
               <strong>S18</strong>
               <div style={{ fontSize: 14, color: "#888" }}>{getSecondaryLabel("S18")}</div>
             </div>
           </div>
           <div className="col p-0 " >
-            <div>
-              <span className="d-none">15"(L)</span>
-            </div>
-            <input ref={setImgRef("S17")} type="image" onClick={img} src={getSrc("S17")} width={90} alt="Placeholder" data-id="S17"
-              style={{ borderRadius: 16 }} />
+
+            <input type="image" onClick={img} src={getSrc("S17")} width={90} alt="Placeholder" data-id="S17"
+              className='borde' />
             <div>
               <strong>S17</strong>
               <div style={{ fontSize: 14, color: "#888" }}>{getSecondaryLabel("S17")}</div>
             </div>
           </div>
           <div className="col p-0 " >
-            <div>
-              <span className="d-none">14"(M)</span>
-            </div>
-            <input ref={setImgRef("S16")} type="image" onClick={img} src={getSrc("S16")} width={90} alt="Placeholder" data-id="S16"
-              style={{ borderRadius: 16 }} />
+
+            <input type="image" onClick={img} src={getSrc("S16")} width={90} alt="Placeholder" data-id="S16"
+              className='borde' />
             <div>
               <strong>S16</strong>
               <div style={{ fontSize: 14, color: "#888" }}>{getSecondaryLabel("S16")}</div>
             </div>
           </div>
           <div className="col p-0 " >
-            <div>
-              <span className="d-none">14"(M)</span>
-            </div>
-            <input ref={setImgRef("S4")} type="image" onClick={img} src={getSrc("S4")} width={90} alt="Placeholder" data-id="S4"
-              style={{ borderRadius: 16 }} />
+            <input type="image" onClick={img} src={getSrc("S4")} width={90} alt="Placeholder" data-id="S4"
+              className='borde' />
             <div>
               <strong>S4</strong>
               <div style={{ fontSize: 14, color: "#888" }}>{getSecondaryLabel("S4")}</div>
             </div>
           </div>
           <div className="col p-0">
-            <div>
-              <span className="d-none">14"(M)</span>
-            </div>
-            <input ref={setImgRef("S5")} type="image" onClick={img} src={getSrc("S5")} width={90} alt="Placeholder" data-id="S5"
-              style={{ borderRadius: 16 }} />
+
+            <input type="image" onClick={img} src={getSrc("S5")} width={90} alt="Placeholder" data-id="S5"
+              className='borde' />
             <div>
               <strong>S5</strong>
               <div style={{ fontSize: 14, color: "#888" }}>{getSecondaryLabel("S5")}</div>
@@ -1497,27 +1230,12 @@ function App() {
           <div className="col">
             <div className="row ">
               <div className="col " >
-                <div>
-                  <span className="d-none">4"(Panty)</span>
-                </div>
-                <input ref={setImgRef("67")} type="image" onClick={img} src={getSrc("67")} width={60} alt="Placeholder" data-id="67"
-                  style={{ borderRadius: 16 }} />
+
+                <input type="image" onClick={img} src={getSrc("67")} width={60} alt="Placeholder" data-id="67"
+                  className='borde' />
                 <div>
                   <strong>67</strong>
-                  <div style={{
-                    fontSize: 14,
-                    color: "#888",
-                    minHeight: 20,
-                    height: 20,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                    width: "100%",
-                    borderRadius: 12
-                  }}>
+                  <div className="mq">
                     {getSecondaryLabel("67") || "\u00A0"}
                   </div>
                 </div>
@@ -1525,27 +1243,12 @@ function App() {
             </div>
             <div className="row ">
               <div className="col " >
-                <div>
-                  <span className="d-none">4"(Panty)</span>
-                </div>
-                <input ref={setImgRef("66")} type="image" onClick={img} src={getSrc("66")} width={60} alt="Placeholder" data-id="66"
-                  style={{ borderRadius: 16 }} />
+
+                <input type="image" onClick={img} src={getSrc("66")} width={60} alt="Placeholder" data-id="66"
+                  className='borde' />
                 <div>
                   <strong>66</strong>
-                  <div style={{
-                    fontSize: 14,
-                    color: "#888",
-                    minHeight: 20,
-                    height: 20,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                    width: "100%",
-                    borderRadius: 12
-                  }}>
+                  <div className="mq">
                     {getSecondaryLabel("66") || "\u00A0"}
                   </div>
                 </div>
@@ -1555,27 +1258,12 @@ function App() {
           <div className="col ">
             <div className="row ">
               <div className="col " >
-                <div>
-                  <span className="d-none">4"(Body)</span>
-                </div>
-                <input ref={setImgRef("26")} type="image" onClick={img} src={getSrc("26")} width={60} alt="Placeholder" data-id="26"
-                  style={{ borderRadius: 16 }} />
+
+                <input type="image" onClick={img} src={getSrc("26")} width={60} alt="Placeholder" data-id="26"
+                  className='borde' />
                 <div>
                   <strong>26</strong>
-                  <div style={{
-                    fontSize: 14,
-                    color: "#888",
-                    minHeight: 20,
-                    height: 20,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                    width: "100%",
-                    borderRadius: 12
-                  }}>
+                  <div className="mq">
                     {getSecondaryLabel("26") || "\u00A0"}
                   </div>
                 </div>
@@ -1583,27 +1271,12 @@ function App() {
             </div>
             <div className="row ">
               <div className="col " >
-                <div>
-                  <span className="d-none">4"(Media)</span>
-                </div>
-                <input ref={setImgRef("49")} type="image" onClick={img} src={getSrc("49")} width={60} alt="Placeholder" data-id="49"
-                  style={{ borderRadius: 16 }} />
+
+                <input type="image" onClick={img} src={getSrc("49")} width={60} alt="Placeholder" data-id="49"
+                  className='borde' />
                 <div>
                   <strong>49</strong>
-                  <div style={{
-                    fontSize: 14,
-                    color: "#888",
-                    minHeight: 20,
-                    height: 20,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                    width: "100%",
-                    borderRadius: 12
-                  }}>
+                  <div className="mq">
                     {getSecondaryLabel("49") || "\u00A0"}
                   </div>
                 </div>
@@ -1613,27 +1286,12 @@ function App() {
           <div className="col ">
             <div className="row ">
               <div className="col " >
-                <div>
-                  <span className="d-none">4"(Body)</span>
-                </div>
-                <input ref={setImgRef("28")} type="image" onClick={img} src={getSrc("28")} width={60} alt="Placeholder" data-id="28"
-                  style={{ borderRadius: 16 }} />
+
+                <input type="image" onClick={img} src={getSrc("28")} width={60} alt="Placeholder" data-id="28"
+                  className='borde' />
                 <div>
                   <strong>28</strong>
-                  <div style={{
-                    fontSize: 14,
-                    color: "#888",
-                    minHeight: 20,
-                    height: 20,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                    width: "100%",
-                    borderRadius: 12
-                  }}>
+                  <div className="mq">
                     {getSecondaryLabel("28") || "\u00A0"}
                   </div>
                 </div>
@@ -1641,27 +1299,12 @@ function App() {
             </div>
             <div className="row ">
               <div className="col " >
-                <div>
-                  <span className="d-none">4"(Panty)</span>
-                </div>
-                <input ref={setImgRef("55")} type="image" onClick={img} src={getSrc("55")} width={60} alt="Placeholder" data-id="55"
-                  style={{ borderRadius: 16 }} />
+
+                <input type="image" onClick={img} src={getSrc("55")} width={60} alt="Placeholder" data-id="55"
+                  className='borde' />
                 <div>
                   <strong>55</strong>
-                  <div style={{
-                    fontSize: 14,
-                    color: "#888",
-                    minHeight: 20,
-                    height: 20,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                    width: "100%",
-                    borderRadius: 12
-                  }}>
+                  <div className="mq">
                     {getSecondaryLabel("55") || "\u00A0"}
                   </div>
                 </div>
@@ -1671,27 +1314,12 @@ function App() {
           <div className="col ">
             <div className="row ">
               <div className="col " >
-                <div>
-                  <span className="d-none">4"(Media)</span>
-                </div>
-                <input ref={setImgRef("30")} type="image" onClick={img} src={getSrc("30")} width={60} alt="Placeholder" data-id="30"
-                  style={{ borderRadius: 16 }} />
+
+                <input type="image" onClick={img} src={getSrc("30")} width={60} alt="Placeholder" data-id="30"
+                  className='borde' />
                 <div>
                   <strong>30</strong>
-                  <div style={{
-                    fontSize: 14,
-                    color: "#888",
-                    minHeight: 20,
-                    height: 20,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                    width: "100%",
-                    borderRadius: 12
-                  }}>
+                  <div className="mq">
                     {getSecondaryLabel("30") || "\u00A0"}
                   </div>
                 </div>
@@ -1699,27 +1327,12 @@ function App() {
             </div>
             <div className="row ">
               <div className="col " >
-                <div>
-                  <span className="d-none">4"(Panty)</span>
-                </div>
-                <input ref={setImgRef("58")} type="image" onClick={img} src={getSrc("58")} width={60} alt="Placeholder" data-id="58"
-                  style={{ borderRadius: 16 }} />
+
+                <input type="image" onClick={img} src={getSrc("58")} width={60} alt="Placeholder" data-id="58"
+                  className='borde' />
                 <div>
                   <strong>58</strong>
-                  <div style={{
-                    fontSize: 14,
-                    color: "#888",
-                    minHeight: 20,
-                    height: 20,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                    width: "100%",
-                    borderRadius: 12
-                  }}>
+                  <div className="mq">
                     {getSecondaryLabel("58") || "\u00A0"}
                   </div>
                 </div>
@@ -1729,27 +1342,12 @@ function App() {
           <div className="col ">
             <div className="row ">
               <div className="col " >
-                <div>
-                  <span className="d-none">4"(Media)</span>
-                </div>
-                <input ref={setImgRef("31")} type="image" onClick={img} src={getSrc("31")} width={60} alt="Placeholder" data-id="31"
-                  style={{ borderRadius: 16 }} />
+
+                <input type="image" onClick={img} src={getSrc("31")} width={60} alt="Placeholder" data-id="31"
+                  className='borde' />
                 <div>
                   <strong>31</strong>
-                  <div style={{
-                    fontSize: 14,
-                    color: "#888",
-                    minHeight: 20,
-                    height: 20,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                    width: "100%",
-                    borderRadius: 12
-                  }}>
+                  <div className="mq">
                     {getSecondaryLabel("31") || "\u00A0"}
                   </div>
                 </div>
@@ -1757,27 +1355,12 @@ function App() {
             </div>
             <div className="row ">
               <div className="col " >
-                <div>
-                  <span className="d-none">4"(Panty)</span>
-                </div>
-                <input ref={setImgRef("57")} type="image" onClick={img} src={getSrc("57")} width={60} alt="Placeholder" data-id="57"
-                  style={{ borderRadius: 16 }} />
+
+                <input type="image" onClick={img} src={getSrc("57")} width={60} alt="Placeholder" data-id="57"
+                  className='borde' />
                 <div>
                   <strong>57</strong>
-                  <div style={{
-                    fontSize: 14,
-                    color: "#888",
-                    minHeight: 20,
-                    height: 20,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                    width: "100%",
-                    borderRadius: 12
-                  }}>
+                  <div className="mq">
                     {getSecondaryLabel("57") || "\u00A0"}
                   </div>
                 </div>
@@ -1787,27 +1370,12 @@ function App() {
           <div className="col ">
             <div className="row ">
               <div className="col " >
-                <div>
-                  <span className="d-none">4"(Panty)</span>
-                </div>
-                <input ref={setImgRef("32")} type="image" onClick={img} src={getSrc("32")} width={60} alt="Placeholder" data-id="32"
-                  style={{ borderRadius: 16 }} />
+
+                <input type="image" onClick={img} src={getSrc("32")} width={60} alt="Placeholder" data-id="32"
+                  className='borde' />
                 <div>
                   <strong>32</strong>
-                  <div style={{
-                    fontSize: 14,
-                    color: "#888",
-                    minHeight: 20,
-                    height: 20,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                    width: "100%",
-                    borderRadius: 12
-                  }}>
+                  <div className="mq">
                     {getSecondaryLabel("32") || "\u00A0"}
                   </div>
                 </div>
@@ -1815,27 +1383,12 @@ function App() {
             </div>
             <div className="row ">
               <div className="col " >
-                <div>
-                  <span className="d-none">4"(Panty)</span>
-                </div>
-                <input ref={setImgRef("56")} type="image" onClick={img} src={getSrc("56")} width={60} alt="Placeholder" data-id="56"
-                  style={{ borderRadius: 16 }} />
+
+                <input type="image" onClick={img} src={getSrc("56")} width={60} alt="Placeholder" data-id="56"
+                  className='borde' />
                 <div>
                   <strong>56</strong>
-                  <div style={{
-                    fontSize: 14,
-                    color: "#888",
-                    minHeight: 20,
-                    height: 20,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                    width: "100%",
-                    borderRadius: 12
-                  }}>
+                  <div className="mq">
                     {getSecondaryLabel("56") || "\u00A0"}
                   </div>
                 </div>
@@ -1845,27 +1398,12 @@ function App() {
           <div className="col ">
             <div className="row ">
               <div className="col " >
-                <div>
-                  <span className="d-none">4"(Panty)</span>
-                </div>
-                <input ref={setImgRef("33")} type="image" onClick={img} src={getSrc("33")} width={60} alt="Placeholder" data-id="33"
-                  style={{ borderRadius: 16 }} />
+
+                <input type="image" onClick={img} src={getSrc("33")} width={60} alt="Placeholder" data-id="33"
+                  className='borde' />
                 <div>
                   <strong>33</strong>
-                  <div style={{
-                    fontSize: 14,
-                    color: "#888",
-                    minHeight: 20,
-                    height: 20,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                    width: "100%",
-                    borderRadius: 12
-                  }}>
+                  <div className="mq">
                     {getSecondaryLabel("33") || "\u00A0"}
                   </div>
                 </div>
@@ -1873,27 +1411,12 @@ function App() {
             </div>
             <div className="row ">
               <div className="col " >
-                <div>
-                  <span className="d-none">4"(Panty)</span>
-                </div>
-                <input ref={setImgRef("54")} type="image" onClick={img} src={getSrc("54")} width={60} alt="Placeholder" data-id="54"
-                  style={{ borderRadius: 16 }} />
+
+                <input type="image" onClick={img} src={getSrc("54")} width={60} alt="Placeholder" data-id="54"
+                  className='borde' />
                 <div>
                   <strong>54</strong>
-                  <div style={{
-                    fontSize: 14,
-                    color: "#888",
-                    minHeight: 20,
-                    height: 20,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                    width: "100%",
-                    borderRadius: 12
-                  }}>
+                  <div className="mq">
                     {getSecondaryLabel("54") || "\u00A0"}
                   </div>
                 </div>
@@ -1903,27 +1426,12 @@ function App() {
           <div className="col ">
             <div className="row ">
               <div className="col " >
-                <div>
-                  <span className="d-none">4"(Panty)</span>
-                </div>
-                <input ref={setImgRef("35")} type="image" onClick={img} src={getSrc("35")} width={60} alt="Placeholder" data-id="35"
-                  style={{ borderRadius: 16 }} />
+
+                <input type="image" onClick={img} src={getSrc("35")} width={60} alt="Placeholder" data-id="35"
+                  className='borde' />
                 <div>
                   <strong>35</strong>
-                  <div style={{
-                    fontSize: 14,
-                    color: "#888",
-                    minHeight: 20,
-                    height: 20,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                    width: "100%",
-                    borderRadius: 12
-                  }}>
+                  <div className="mq">
                     {getSecondaryLabel("35") || "\u00A0"}
                   </div>
                 </div>
@@ -1931,27 +1439,12 @@ function App() {
             </div>
             <div className="row ">
               <div className="col " >
-                <div>
-                  <span className="d-none">4"(Panty)</span>
-                </div>
-                <input ref={setImgRef("52")} type="image" onClick={img} src={getSrc("52")} width={60} alt="Placeholder" data-id="52"
-                  style={{ borderRadius: 16 }} />
+
+                <input type="image" onClick={img} src={getSrc("52")} width={60} alt="Placeholder" data-id="52"
+                  className='borde' />
                 <div>
                   <strong>52</strong>
-                  <div style={{
-                    fontSize: 14,
-                    color: "#888",
-                    minHeight: 20,
-                    height: 20,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                    width: "100%",
-                    borderRadius: 12
-                  }}>
+                  <div className="mq">
                     {getSecondaryLabel("52") || "\u00A0"}
                   </div>
                 </div>
@@ -1961,27 +1454,12 @@ function App() {
           <div className="col ">
             <div className="row ">
               <div className="col " >
-                <div>
-                  <span className="d-none">4"(Panty)</span>
-                </div>
-                <input ref={setImgRef("36")} type="image" onClick={img} src={getSrc("36")} width={60} alt="Placeholder" data-id="36"
-                  style={{ borderRadius: 16 }} />
+
+                <input type="image" onClick={img} src={getSrc("36")} width={60} alt="Placeholder" data-id="36"
+                  className='borde' />
                 <div>
                   <strong>36</strong>
-                  <div style={{
-                    fontSize: 14,
-                    color: "#888",
-                    minHeight: 20,
-                    height: 20,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                    width: "100%",
-                    borderRadius: 12
-                  }}>
+                  <div className="mq">
                     {getSecondaryLabel("36") || "\u00A0"}
                   </div>
                 </div>
@@ -1989,28 +1467,12 @@ function App() {
             </div>
             <div className="row ">
               <div className="col " >
-                <div>
-                  <span className="d-none">4"(Panty)</span>
-                </div>
-                <input ref={setImgRef("51")} type="image" onClick={img} src={getSrc("51")} width={60} alt="Placeholder" data-id="51"
-                  style={{ borderRadius: 16 }} />
+
+                <input type="image" onClick={img} src={getSrc("51")} width={60} alt="Placeholder" data-id="51"
+                  className='borde' />
                 <div>
                   <strong>51</strong>
-                  <div style={{
-
-                    fontSize: 14,
-                    color: "#888",
-                    minHeight: 20,
-                    height: 20,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                    width: "100%",
-                    borderRadius: 12
-                  }}>
+                  <div className='mq'>
                     {getSecondaryLabel("51") || "\u00A0"}
                   </div>
                 </div>
@@ -2020,26 +1482,12 @@ function App() {
           <div className="col ">
             <div className="row ">
               <div className="col " >
-                <div>
-                  <span className="d-none">4"(Body)</span>
-                </div>
-                <input ref={setImgRef("38")} type="image" onClick={img} src={getSrc("38")} width={60} alt="Placeholder" data-id="38"
-                  style={{ borderRadius: 16 }} />
+
+                <input type="image" onClick={img} src={getSrc("38")} width={60} alt="Placeholder" data-id="38"
+                  className='borde' />
                 <div>
                   <strong>38</strong>
-                  <div style={{
-                    fontSize: 14,
-                    color: "#888",
-                    minHeight: 20,
-                    height: 20,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                    width: "100%"
-                  }}>
+                  <div className='mq'>
                     {getSecondaryLabel("38") || "\u00A0"}
                   </div>
                 </div>
@@ -2047,26 +1495,12 @@ function App() {
             </div>
             <div className="row ">
               <div className="col " >
-                <div>
-                  <span className="d-none">4"(Panty)</span>
-                </div>
-                <input ref={setImgRef("50")} type="image" onClick={img} src={getSrc("50")} width={60} alt="Placeholder" data-id="50" />
+
+                <input type="image" onClick={img} src={getSrc("50")} width={60} alt="Placeholder" data-id="50"
+                  className='borde' />
                 <div>
                   <strong>50</strong>
-                  <div style={{
-                    fontSize: 14,
-                    color: "#888",
-                    minHeight: 20,
-                    height: 20,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                    width: "100%",
-                    borderRadius: 12
-                  }}>
+                  <div className="mq">
                     {getSecondaryLabel("50") || "\u00A0"}
                   </div>
                 </div>
@@ -2076,27 +1510,12 @@ function App() {
           <div className="col ">
             <div className="row ">
               <div className="col " >
-                <div>
-                  <span className="d-none">4"(Media)</span>
-                </div>
-                <input ref={setImgRef("39")} type="image" onClick={img} src={getSrc("39")} width={60} alt="Placeholder" data-id="39"
-                  style={{ borderRadius: 16 }} />
+
+                <input type="image" onClick={img} src={getSrc("39")} width={60} alt="Placeholder" data-id="39"
+                  className='borde' />
                 <div>
                   <strong>39</strong>
-                  <div style={{
-                    fontSize: 14,
-                    color: "#888",
-                    minHeight: 20,
-                    height: 20,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                    width: "100%",
-                    borderRadius: 12
-                  }}>
+                  <div className="mq">
                     {getSecondaryLabel("39") || "\u00A0"}
                   </div>
                 </div>
@@ -2104,27 +1523,12 @@ function App() {
             </div>
             <div className="row ">
               <div className="col " >
-                <div>
-                  <span className="d-none">4"(Media)</span>
-                </div>
-                <input ref={setImgRef("44")} type="image" onClick={img} src={getSrc("44")} width={60} alt="Placeholder" data-id="44"
-                  style={{ borderRadius: 16 }} />
+
+                <input type="image" onClick={img} src={getSrc("44")} width={60} alt="Placeholder" data-id="44"
+                  className='borde' />
                 <div>
                   <strong>44</strong>
-                  <div style={{
-                    fontSize: 14,
-                    color: "#888",
-                    minHeight: 20,
-                    height: 20,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                    width: "100%",
-                    borderRadius: 12
-                  }}>
+                  <div className="mq">
                     {getSecondaryLabel("44") || "\u00A0"}
                   </div>
                 </div>
@@ -2134,27 +1538,12 @@ function App() {
           <div className="col ">
             <div className="row ">
               <div className="col " >
-                <div>
-                  <span className="d-none">4"(Media)</span>
-                </div>
-                <input ref={setImgRef("40")} type="image" onClick={img} src={getSrc("40")} width={60} alt="Placeholder" data-id="40"
-                  style={{ borderRadius: 16 }} />
+
+                <input type="image" onClick={img} src={getSrc("40")} width={60} alt="Placeholder" data-id="40"
+                  className='borde' />
                 <div>
                   <strong>40</strong>
-                  <div style={{
-                    fontSize: 14,
-                    color: "#888",
-                    minHeight: 20,
-                    height: 20,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                    width: "100%",
-                    borderRadius: 12
-                  }}>
+                  <div className="mq">
                     {getSecondaryLabel("40") || "\u00A0"}
                   </div>
                 </div>
@@ -2162,27 +1551,12 @@ function App() {
             </div>
             <div className="row ">
               <div className="col " >
-                <div>
-                  <span className="d-none">4"(Media)</span>
-                </div>
-                <input ref={setImgRef("43")} type="image" onClick={img} src={getSrc("43")} width={60} alt="Placeholder" data-id="43"
-                  style={{ borderRadius: 16 }} />
+
+                <input type="image" onClick={img} src={getSrc("43")} width={60} alt="Placeholder" data-id="43"
+                  className='borde' />
                 <div>
                   <strong>43</strong>
-                  <div style={{
-                    fontSize: 14,
-                    color: "#888",
-                    minHeight: 20,
-                    height: 20,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                    width: "100%",
-                    borderRadius: 12
-                  }}>
+                  <div className="mq">
                     {getSecondaryLabel("43") || "\u00A0"}
                   </div>
                 </div>
@@ -2194,371 +1568,181 @@ function App() {
         <div className="row py-5 text-center">
 
           <div className="col ">
-            <div>
-              <span className="d-none">4"(Cachimire)</span>
-            </div>
-            <input ref={setImgRef("64")} type="image" onClick={img} src={getSrc("64")} width={60} alt="Placeholder" data-id="64"
-              style={{ borderRadius: 16 }} />
+
+            <input type="image" onClick={img} src={getSrc("64")} width={60} alt="Placeholder" data-id="64"
+              className='borde' />
             <div>
               <strong>64</strong>
-              <div style={{
-                fontSize: 14,
-                color: "#888",
-                minHeight: 20,
-                height: 20,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-                width: "100%",
-                borderRadius: 12
-              }}>
+              <div className="mq">
                 {getSecondaryLabel("64") || "\u00A0"}
               </div>
             </div>
           </div>
           <div className="col ">
-            <div>
-              <span className="d-none">4"(Cachimire)</span>
-            </div>
-            <input ref={setImgRef("65")} type="image" onClick={img} src={getSrc("65")} width={60} alt="Placeholder" data-id="65"
-              style={{ borderRadius: 16 }} />
+
+            <input type="image" onClick={img} src={getSrc("65")} width={60} alt="Placeholder" data-id="65"
+              className='borde' />
             <div>
               <strong>65</strong>
-              <div style={{
-                fontSize: 14,
-                color: "#888",
-                minHeight: 20,
-                height: 20,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-                width: "100%",
-                borderRadius: 12
-              }}>
+              <div className="mq">
                 {getSecondaryLabel("65") || "\u00A0"}
               </div>
             </div>
           </div>
           <div className="col ">
-            <div>
-              <span className="d-none">4"(Media)</span>
-            </div>
-            <input ref={setImgRef("45")} type="image" onClick={img} src={getSrc("45")} width={60} alt="Placeholder" data-id="45"
-              style={{ borderRadius: 16 }} />
+
+            <input type="image" onClick={img} src={getSrc("45")} width={60} alt="Placeholder" data-id="45"
+              className='borde' />
             <div>
               <strong>45</strong>
-              <div style={{
-                fontSize: 14,
-                color: "#888",
-                minHeight: 20,
-                height: 20,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-                width: "100%",
-                borderRadius: 12
-              }}>
+              <div className="mq">
                 {getSecondaryLabel("45") || "\u00A0"}
               </div>
             </div>
           </div>
           <div className="col ">
-            <div>
-              <span className="d-none">4"(Media)</span>
-            </div>
-            <input ref={setImgRef("46")} type="image" onClick={img} src={getSrc("46")} width={60} alt="Placeholder" data-id="46"
-              style={{ borderRadius: 16 }} />
+
+            <input type="image" onClick={img} src={getSrc("46")} width={60} alt="Placeholder" data-id="46"
+              className='borde' />
             <div>
               <strong>46</strong>
-              <div style={{
-                fontSize: 14,
-                color: "#888",
-                minHeight: 20,
-                height: 20,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-                width: "100%",
-                borderRadius: 12
-              }}>
+              <div className="mq">
                 {getSecondaryLabel("46") || "\u00A0"}
               </div>
             </div>
           </div>
           <div className="col ">
-            <div>
-              <span className="d-none">4"(Media)</span>
-            </div>
-            <input ref={setImgRef("47")} type="image" onClick={img} src={getSrc("47")} width={60} alt="Placeholder" data-id="47"
-              style={{ borderRadius: 16 }} />
+
+            <input type="image" onClick={img} src={getSrc("47")} width={60} alt="Placeholder" data-id="47"
+              className='borde' />
             <div>
               <strong>47</strong>
-              <div style={{
-                fontSize: 14,
-                color: "#888",
-                minHeight: 20,
-                height: 20,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-                width: "100%",
-                borderRadius: 12
-              }}>
+              <div className="mq">
                 {getSecondaryLabel("47") || "\u00A0"}
               </div>
             </div>
           </div>
           <div className="col ">
-            <div>
-              <span className="d-none">4"(Media)</span>
-            </div>
-            <input ref={setImgRef("48")} type="image" onClick={img} src={getSrc("48")} width={60} alt="Placeholder" data-id="48"
-              style={{ borderRadius: 16 }} />
+
+            <input type="image" onClick={img} src={getSrc("48")} width={60} alt="Placeholder" data-id="48"
+              className='borde' />
             <div>
               <strong>48</strong>
-              <div style={{
-                fontSize: 14,
-                color: "#888",
-                minHeight: 20,
-                height: 20,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-                width: "100%",
-                borderRadius: 12
-              }}>
+              <div className="mq">
                 {getSecondaryLabel("48") || "\u00A0"}
               </div>
             </div>
           </div>
           <div className="col ">
-            <div>
-              <span className="d-none">5"(S-M-L)</span>
-            </div>
-            <input ref={setImgRef("69")} type="image" onClick={img} src={getSrc("69")} width={60} alt="Placeholder" data-id="69"
-              style={{ borderRadius: 16 }} />
+
+            <input type="image" onClick={img} src={getSrc("69")} width={60} alt="Placeholder" data-id="69"
+              className='borde' />
             <div>
               <strong>69</strong>
-              <div style={{
-                fontSize: 14,
-                color: "#888",
-                minHeight: 20,
-                height: 20,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-                width: "100%",
-                borderRadius: 12
-              }}>
+              <div className="mq">
                 {getSecondaryLabel("69") || "\u00A0"}
               </div>
             </div>
           </div>
           <div className="col ">
-            <div>
-              <span className="d-none">5"(S-M-L)</span>
-            </div>
-            <input ref={setImgRef("70")} type="image" onClick={img} src={getSrc("70")} width={60} alt="Placeholder" data-id="70"
-              style={{ borderRadius: 16 }} />
+
+            <input type="image" onClick={img} src={getSrc("70")} width={60} alt="Placeholder" data-id="70"
+              className='borde' />
             <div>
               <strong>70</strong>
-              <div style={{
-                fontSize: 14,
-                color: "#888",
-                minHeight: 20,
-                height: 20,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-                width: "100%",
-                borderRadius: 12
-              }}>
+              <div className="mq">
                 {getSecondaryLabel("70") || "\u00A0"}
               </div>
             </div>
           </div>
           <div className="col ">
-            <div>
-              <span className="d-none">5"(S-M-L)</span>
-            </div>
-            <input ref={setImgRef("71")} type="image" onClick={img} src={getSrc("71")} width={60} alt="Placeholder" data-id="71"
-              style={{ borderRadius: 16 }} />
+
+            <input type="image" onClick={img} src={getSrc("71")} width={60} alt="Placeholder" data-id="71"
+              className='borde' />
             <div>
               <strong>71</strong>
-              <div style={{
-                fontSize: 14,
-                color: "#888",
-                minHeight: 20,
-                height: 20,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-                width: "100%",
-                borderRadius: 12
-              }}>
+              <div className="mq">
                 {getSecondaryLabel("71") || "\u00A0"}
               </div>
             </div>
           </div>
           <div className="col ">
-            <div>
-              <span className="d-none">5"(S-M-L)</span>
-            </div>
-            <input ref={setImgRef("72")} type="image" onClick={img} src={getSrc("72")} width={60} alt="Placeholder" data-id="72"
-              style={{ borderRadius: 16 }} />
+
+            <input type="image" onClick={img} src={getSrc("72")} width={60} alt="Placeholder" data-id="72"
+              className='borde' />
             <div>
               <strong>72</strong>
-              <div style={{
-                fontSize: 14,
-                color: "#888",
-                minHeight: 20,
-                height: 20,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-                width: "100%",
-                borderRadius: 12
-              }}>
+              <div className="mq">
                 {getSecondaryLabel("72") || "\u00A0"}
               </div>
             </div>
           </div>
           <div className="col ">
-            <div>
-              <span className="d-none">5"(S-M-L)</span>
-            </div>
-            <input ref={setImgRef("73")} type="image" onClick={img} src={getSrc("73")} width={60} alt="Placeholder" data-id="73"
-              style={{ borderRadius: 16 }} />
+
+            <input type="image" onClick={img} src={getSrc("73")} width={60} alt="Placeholder" data-id="73"
+              className='borde' />
             <div>
               <strong>73</strong>
-              <div style={{
-                fontSize: 14,
-                color: "#888",
-                minHeight: 20,
-                height: 20,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-                width: "100%",
-                borderRadius: 12
-              }}>
+              <div className="mq">
                 {getSecondaryLabel("73") || "\u00A0"}
               </div>
             </div>
           </div>
           <div className="col ">
-            <div>
-              <span className="d-none">6"(XL-2XL)</span>
-            </div>
-            <input ref={setImgRef("74")} type="image" onClick={img} src={getSrc("74")} width={60} alt="Placeholder" data-id="74"
-              style={{ borderRadius: 16 }} />
+
+            <input type="image" onClick={img} src={getSrc("74")} width={60} alt="Placeholder" data-id="74"
+              className='borde' />
             <div>
               <strong>74</strong>
-              <div style={{
-                fontSize: 14,
-                color: "#888",
-                minHeight: 20,
-                height: 20,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-                width: "100%",
-                borderRadius: 12
-              }}>
+              <div className="mq">
                 {getSecondaryLabel("74") || "\u00A0"}
               </div>
             </div>
           </div>
           <div className="col ">
-            <div>
-              <span className="d-none">6"(XL-2XL)</span>
-            </div>
-            <input ref={setImgRef("75")} type="image" onClick={img} src={getSrc("75")} width={60} alt="Placeholder" data-id="75"
-              style={{ borderRadius: 16 }} />
+
+            <input type="image" onClick={img} src={getSrc("75")} width={60} alt="Placeholder" data-id="75"
+              className='borde' />
             <div>
               <strong>75</strong>
-              <div style={{
-                fontSize: 14,
-                color: "#888",
-                minHeight: 20,
-                height: 20,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-                width: "100%",
-                borderRadius: 12
-              }}>
+              <div className="mq">
                 {getSecondaryLabel("75") || "\u00A0"}
               </div>
             </div>
           </div>
           <div className="col ">
-            <div>
-              <span className="d-none">6"(XL-2XL)</span>
-            </div>
-            <input ref={setImgRef("76")} type="image" onClick={img} src={getSrc("76")} width={60} alt="Placeholder" data-id="76" style={{ borderRadius: 16 }} />
+
+            <input type="image" onClick={img} src={getSrc("76")} width={60} alt="Placeholder" data-id="76" className='borde' />
             <div>
               <strong>76</strong>
-              <div style={{
-                fontSize: 14,
-                color: "#888",
-                minHeight: 20,
-                height: 20,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-                width: "100%",
-                borderRadius: 12
-              }}>
+              <div className="mq">
                 {getSecondaryLabel("76") || "\u00A0"}
               </div>
             </div>
           </div>
         </div>
+
+        {/* Botones de acciones principales */}
+        <div className="mb-3 text-end">
+          <button className="btn btn-primary me-2" onClick={handleShowObservaciones}>
+            Observaciones Proceso
+          </button>
+          <button className="btn btn-secondary me-2" onClick={handleShowAllSnapshots}>
+            Ver estados guardados
+          </button>
+          <button className="btn btn-success me-2" onClick={handleSaveSnapshotNow}>
+            Guardar estado
+          </button>
+          {/* Botón para pedir permiso de notificaciones en móviles */}
+          {("Notification" in window && Notification.permission !== "granted" && !notifAsked) && (
+            <button className="btn btn-warning" onClick={handleAskNotif}>
+              Activar notificaciones
+            </button>
+          )}
+        </div>
       </div>
-      {/* Modal de opciones para cambiar estado de una máquina */}
+
+      {/* Modal de opciones principales de maquinas */}
       {
         modal.show && (
           <div style={{
@@ -2668,96 +1852,82 @@ function App() {
           </div>
         )
       }
-      {/* Botones de acciones principales */}
-      <div className="mb-3 text-end">
-        {/* <button className="btn btn-info me-2" onClick={handleShowSnapshot}>
-          Ver estados guardados del día
-        </button> */}
-        <button className="btn btn-secondary me-2" onClick={handleShowAllSnapshots}>
-          Ver estados guardados
-        </button>
-        <button className="btn btn-success me-2" onClick={handleSaveSnapshotNow}>
-          Guardar estado
-        </button>
-        {/* Botón para pedir permiso de notificaciones en móviles */}
-        {("Notification" in window && Notification.permission !== "granted" && !notifAsked) && (
-          <button className="btn btn-warning" onClick={handleAskNotif}>
-            Activar notificaciones (haz clic y acepta para recibir avisos)
-          </button>
-        )}
-      </div>
+
       {/* --- Modal para mostrar observaciones generales de los snapshots --- */}
-      {showObservaciones && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
-          background: 'rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 99999
-        }}>
+      {
+        showObservaciones && (
           <div style={{
-            background: 'white',
-            padding: 24,
-            borderRadius: 8,
-            minWidth: 320,
-            maxWidth: 600,
-            maxHeight: '90vh',
-            overflow: 'auto',
-            position: 'relative'
+            position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
+            background: 'rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 99999
           }}>
-            <button
-              onClick={() => setShowObservaciones(false)}
-              style={{
-                position: 'absolute',
-                top: 12,
-                right: 12,
-                zIndex: 1000,
-                fontSize: 22,
-                background: 'transparent',
-                border: 'none',
-                color: '#333',
-                cursor: 'pointer'
-              }}
-              aria-label="Cerrar"
-              title="Cerrar"
-            >
-              ×
-            </button>
-            <h4>Observaciones generales</h4>
-            {loadingSnapshots ? (
-              <div>Cargando...</div>
-            ) : (
-              observacionesList.length === 0 ? (
-                <div>No hay observaciones generales guardadas.</div>
-              ) : (
-                <div style={{ maxHeight: 500, overflowY: 'auto' }}>
-                  {observacionesList.map(({ key, fecha, guardadoPor, observaciones }) => (
-                    <div key={key} style={{
-                      borderBottom: "1px solid #ddd",
-                      marginBottom: 12,
-                      paddingBottom: 8
-                    }}>
-                      <div style={{ fontSize: 15, color: "#000" }}>
-                        {fecha}
-                        {guardadoPor && <> &nbsp;|&nbsp; <b>{guardadoPor}</b></>}
-                      </div>
-                      <div style={{ fontSize: 16, color: "#333", marginTop: 4, whiteSpace: "pre-line" }}>
-                        {observaciones}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )
-            )}
-            <div style={{ textAlign: "center", marginTop: 18 }}>
+            <div style={{
+              background: 'white',
+              padding: 24,
+              borderRadius: 8,
+              minWidth: 320,
+              maxWidth: 600,
+              maxHeight: '90vh',
+              overflow: 'auto',
+              position: 'relative'
+            }}>
               <button
-                className="btn btn-secondary"
-                style={{ fontSize: 18, padding: "8px 32px" }}
                 onClick={() => setShowObservaciones(false)}
+                style={{
+                  position: 'absolute',
+                  top: 12,
+                  right: 12,
+                  zIndex: 1000,
+                  fontSize: 22,
+                  background: 'transparent',
+                  border: 'none',
+                  color: '#333',
+                  cursor: 'pointer'
+                }}
+                aria-label="Cerrar"
+                title="Cerrar"
               >
-                Cerrar
+                ×
               </button>
+              <h4>Observaciones generales</h4>
+              {loadingSnapshots ? (
+                <div>Cargando...</div>
+              ) : (
+                observacionesList.length === 0 ? (
+                  <div>No hay observaciones generales guardadas.</div>
+                ) : (
+                  <div style={{ maxHeight: 500, overflowY: 'auto' }}>
+                    {observacionesList.map(({ key, fecha, guardadoPor, observaciones }) => (
+                      <div key={key} style={{
+                        borderBottom: "1px solid #ddd",
+                        marginBottom: 12,
+                        paddingBottom: 8
+                      }}>
+                        <div style={{ fontSize: 15, color: "#000" }}>
+                          {fecha}
+                          {guardadoPor && <> &nbsp;|&nbsp; <b>{guardadoPor}</b></>}
+                        </div>
+                        <div style={{ textAlign: "start", fontSize: 16, color: "#333", margin: 5, whiteSpace: "pre-line" }}>
+                          {observaciones}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )
+              )}
+              <div style={{ textAlign: "center", marginTop: 18 }}>
+                <button
+                  className="btn btn-secondary"
+                  style={{ fontSize: 18, padding: "8px 32px" }}
+                  onClick={() => setShowObservaciones(false)}
+                >
+                  Cerrar
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )
+      }
+
       {/* Modal para mostrar todos los snapshots guardados */}
       {
         showAllSnapshots && (
@@ -2773,7 +1943,8 @@ function App() {
               maxWidth: 900,
               maxHeight: '90vh',
               overflow: 'auto',
-              position: 'relative'
+              position: 'relative',
+              textAlign: "center"
             }}>
               {/* Botón cerrar visible arriba a la derecha */}
               <button
@@ -2795,8 +1966,6 @@ function App() {
                 ×
               </button>
               <h4>Todos los estados guardados</h4>
-              {/* Botones juntos: Ver bitácora y Ver observaciones */}
-
               {loadingSnapshots ? (
                 <div>Cargando...</div>
               ) : (
@@ -2880,15 +2049,6 @@ function App() {
                       let fechaMostrar = info.fecha
                         ? new Date(info.fecha).toLocaleString()
                         : fecha;
-                      const mainLabels = {
-                        1: "Mecánico",
-                        2: "Barrado",
-                        3: "Electrónico",
-                        4: "Producción",
-                        5: "Seguimiento",
-                        6: "Tallaje"
-                      };
-
 
                       return (
                         <div key={key} style={{ marginBottom: 18 }}>
