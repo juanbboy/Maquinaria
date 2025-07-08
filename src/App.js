@@ -1721,25 +1721,25 @@ function App() {
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Botones de acciones principales */}
-        <div className="mb-3 text-end">
-          <button className="btn btn-primary me-2" onClick={handleShowObservaciones}>
-            Observaciones Proceso
+      {/* Botones de acciones principales */}
+      <div className="mb-3 text-end">
+        <button className="btn btn-primary me-2" onClick={handleShowObservaciones}>
+          Observaciones Proceso
+        </button>
+        <button className="btn btn-secondary me-2" onClick={handleShowAllSnapshots}>
+          Ver estados guardados
+        </button>
+        <button className="btn btn-success me-2" onClick={handleSaveSnapshotNow}>
+          Guardar estado
+        </button>
+        {/* Botón para pedir permiso de notificaciones en móviles */}
+        {("Notification" in window && Notification.permission !== "granted" && !notifAsked) && (
+          <button className="btn btn-warning" onClick={handleAskNotif}>
+            Activar notificaciones
           </button>
-          <button className="btn btn-secondary me-2" onClick={handleShowAllSnapshots}>
-            Ver estados guardados
-          </button>
-          <button className="btn btn-success me-2" onClick={handleSaveSnapshotNow}>
-            Guardar estado
-          </button>
-          {/* Botón para pedir permiso de notificaciones en móviles */}
-          {("Notification" in window && Notification.permission !== "granted" && !notifAsked) && (
-            <button className="btn btn-warning" onClick={handleAskNotif}>
-              Activar notificaciones
-            </button>
-          )}
-        </div>
+        )}
       </div>
 
       {/* Modal de opciones principales de maquinas */}
