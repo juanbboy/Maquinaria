@@ -1724,22 +1724,28 @@ function App() {
       </div>
 
       {/* Botones de acciones principales */}
-      <div className="mb-3 text-end">
-        <button className="btn btn-primary me-2" onClick={handleShowObservaciones}>
-          Observaciones Proceso
-        </button>
-        <button className="btn btn-secondary me-2" onClick={handleShowAllSnapshots}>
-          Ver estados guardados
-        </button>
-        <button className="btn btn-success me-2" onClick={handleSaveSnapshotNow}>
-          Guardar estado
-        </button>
+      <div className="row justify-content-sm-end justify-content-center  mb-3 ">
+        <div className="col-auto">
+          <button className=" m-1 btn btn-success 2" onClick={handleSaveSnapshotNow}>
+            Guardar estado
+          </button>
+        </div>
+        <div className="col-auto">
+          <button className=" m-1 btn btn-secondary " onClick={handleShowAllSnapshots}>
+            Ver estados guardados
+          </button>
+        </div>
         {/* Botón para pedir permiso de notificaciones en móviles */}
         {("Notification" in window && Notification.permission !== "granted" && !notifAsked) && (
           <button className="btn btn-warning" onClick={handleAskNotif}>
             Activar notificaciones
           </button>
         )}
+        <div className="col-auto">
+          <button className="m-1 btn btn-primary " onClick={handleShowObservaciones}>
+            Observaciones Proceso
+          </button>
+        </div>
       </div>
 
       {/* Modal de opciones principales de maquinas */}
