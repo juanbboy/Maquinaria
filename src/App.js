@@ -953,7 +953,11 @@ function App() {
           guardadoPor: info.guardadoPor || "",
           observaciones: info.observaciones || ""
         }))
-        .filter(item => item.observaciones && item.observaciones.trim() !== "");
+        .filter(item =>
+          item.observaciones &&
+          item.observaciones.trim() !== "" &&
+          ("L. Paez" ? item.guardadoPor === "L. Paez" : true)
+        );
       setObservacionesList(arr);
     } catch (e) {
       setObservacionesList([]);
