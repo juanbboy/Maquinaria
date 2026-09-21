@@ -17,7 +17,7 @@ module.exports = async function handler(req, res) {
         return res.status(405).json({ error: 'Método no permitido' });
     }
 
-    const { guardadoPor, fecha, observaciones, snapshotKey } = req.body || {};
+    const { guardadoPor, observaciones } = req.body || {};
 
     if (!guardadoPor || !observaciones || !String(observaciones).trim()) {
         return res.status(400).json({ error: 'Faltan datos de la observación' });
@@ -29,11 +29,11 @@ module.exports = async function handler(req, res) {
 
     try {
         await getTransporter().sendMail({
-            from: `Máquinas <${process.env.SMTP_USER}>`,
+            from: `Novedades c. proceso <${process.env.SMTP_USER}>`,
             to: process.env.SMTP_TO,
-            subject: `Observación de máquinas - ${guardadoPor}`,
+            subject: `Observación de máquinas`,
             text: [
-                `Guardado por: ${guardadoPor}`,
+                `Informe por: ${guardadoPor}`,
                 '',
                 'Observaciones:',
                 String(observaciones).trim(),
