@@ -789,20 +789,6 @@ function App() {
         bitacoraEstados: (nombre === "L. Paez" && soloObservaciones) ? {} : bitacoraEstadosTexto,
         observaciones: obsGenerales // Guardar observaciones generales
       });
-      if (obsGenerales.trim()) {
-        fetch('/api/send-email', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            guardadoPor: nombre,
-            fecha: now.toISOString(),
-            observaciones: obsGenerales,
-            snapshotKey: key,
-          }),
-        }).catch((error) => {
-          console.error('Error enviando observación por correo:', error);
-        });
-      }
       alert('Estado guardado correctamente por ' + nombre + '.');
       // Envía notificación de entrega de turno
       fcmSendNotification(
@@ -2310,5 +2296,3 @@ function removeUndefined(obj) {
 }
 
 export default App;
-
-
