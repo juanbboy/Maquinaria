@@ -151,7 +151,7 @@ function App() {
         }
       });
     }
-  }, [messaging]);
+  }, []);
 
   // --- Sincronización entre pestañas usando localStorage events ---
   useEffect(() => {
@@ -201,7 +201,7 @@ function App() {
             console.log("An error occurred while retrieving token. ", err);
           });
       });
-  }, [messaging]);
+  }, []);
 
   // --- Opciones principales para los estados de las máquinas ---
   const [modal, setModal] = useState({ show: false, target: null, main: null });
