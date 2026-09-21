@@ -34,8 +34,6 @@ module.exports = async function handler(req, res) {
             subject: `Observación de máquinas - ${guardadoPor}`,
             text: [
                 `Guardado por: ${guardadoPor}`,
-                `Fecha: ${fecha || new Date().toISOString()}`,
-                `Clave: ${snapshotKey || 'N/A'}`,
                 '',
                 'Observaciones:',
                 String(observaciones).trim(),

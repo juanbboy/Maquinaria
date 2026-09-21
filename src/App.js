@@ -796,15 +796,13 @@ function App() {
         bitacoraEstados: (nombre === "L. Paez" && soloObservaciones) ? {} : bitacoraEstadosTexto,
         observaciones: obsGenerales // Guardar observaciones generales
       });
-      if (obsGenerales.trim()) {
+      if (obsGenerales.trim() && nombre === "L. Paez") {
         fetch('/api/send-email', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             guardadoPor: nombre,
-            fecha: now.toISOString(),
             observaciones: obsGenerales,
-            snapshotKey: key,
           }),
         }).catch((error) => {
           console.error('Error enviando observación por correo:', error);
