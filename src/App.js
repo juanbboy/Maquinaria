@@ -114,28 +114,35 @@ function App() {
   const [fcmToken, setFcmToken] = useState(null);
 
   // Envía notificación FCM al backend cuando hay un cambio relevante
-  const fcmSendNotification = React.useCallback(
-    (() => {
-      let lastSent = { key: null, ts: 0 };
-      return async (title, body, changedKey) => {
-        if (!fcmToken) return;
-        // Evita notificaciones duplicadas en corto tiempo
-        const now = Date.now();
-        if (lastSent.key === changedKey && now - lastSent.ts < 2000) return;
-        lastSent = { key: changedKey, ts: now };
-        try {
-          await fetch('https://maquinaria.vercel.app/api/send-fcm', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ title, body }),
-          });
-        } catch (e) {
-          console.error('Error enviando notificación FCM al backend:', e);
-        }
-      };
-    })(),
-    [fcmToken]
-  );
+  const lastSent = useRef({ key: null, ts: 0 });
+
+  const fcmSendNotification = React.useCallback(async (title, body, changedKey) => {
+    if (!fcmToken) return;
+
+    const now = Date.now();
+
+    if (
+      lastSent.current.key === changedKey &&
+      now - lastSent.current.ts < 2000
+    ) {
+      return;
+    }
+
+    lastSent.current = {
+      key: changedKey,
+      ts: now,
+    };
+
+    try {
+      await fetch('https://maquinaria.vercel.app/api/send-fcm', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, body }),
+      });
+    } catch (error) {
+      console.error('Error enviando notificación FCM al backend:', error);
+    }
+  }, [fcmToken]);
 
   // --- Manejo de mensajes FCM recibidos en primer plano ---
   useEffect(() => {
